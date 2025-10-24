@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ProveedorUsuario } from './contexto/ProveedorUsuario';
 import Cabecera from './componentes/comunes/Cabecera';
+import PieDePagina from './componentes/comunes/PieDePagina';
 import PaginaInicio from './paginas/PaginaInicio';
 import PaginaLogin from './paginas/PaginaLogin';
 import PaginaRegistro from './paginas/PaginaRegistro';
@@ -13,18 +14,21 @@ function App() {
   return (
     <ProveedorUsuario>
       <Router>
-        <div style={{ minHeight: '100vh', backgroundColor: '#f0f0f0' }}>
+        <div className="d-flex flex-column min-vh-100 bg-light">
           <Cabecera />
-          <main style={{ padding: '2rem' }}>
-            <Routes>
-              <Route path="/" element={<PaginaInicio />} />
-              <Route path="/login" element={<PaginaLogin />} />
-              <Route path="/registro" element={<PaginaRegistro />} />
-              <Route path="/perfil" element={<PaginaPerfil />} />
-              <Route path="/nueva-publicacion" element={<PaginaNuevaPublicacion />} />
-              <Route path="/publicacion/:id" element={<PaginaDetallePublicacion />} />
-            </Routes>
+          <main className="flex-grow-1 py-4">
+            <div className="container">
+              <Routes>
+                <Route path="/" element={<PaginaInicio />} />
+                <Route path="/login" element={<PaginaLogin />} />
+                <Route path="/registro" element={<PaginaRegistro />} />
+                <Route path="/perfil" element={<PaginaPerfil />} />
+                <Route path="/nueva-publicacion" element={<PaginaNuevaPublicacion />} />
+                <Route path="/publicacion/:id" element={<PaginaDetallePublicacion />} />
+              </Routes>
+            </div>
           </main>
+          <PieDePagina />
         </div>
       </Router>
     </ProveedorUsuario>

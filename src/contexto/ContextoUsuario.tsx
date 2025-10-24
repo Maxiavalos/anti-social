@@ -9,14 +9,14 @@ export interface Usuario {
 
 interface ContextoUsuarioType {
   usuario: Usuario | null;
+  estaLogueado: boolean;
   iniciarSesion: (usuario: Usuario) => void;
   cerrarSesion: () => void;
-  estaLogueado: boolean;
 }
 
 export const ContextoUsuario = React.createContext<ContextoUsuarioType>({
   usuario: null,
+  estaLogueado: false,
   iniciarSesion: () => {},
   cerrarSesion: () => {},
-  estaLogueado: false,
 });
