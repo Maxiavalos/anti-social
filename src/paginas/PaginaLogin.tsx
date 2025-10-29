@@ -1,6 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ContextoUsuario } from '../contexto/ContextoUsuario';
+import { usuarioService } from '../servicios/api';
 
 const PaginaLogin: React.FC = () => {
   const [nickName, setNickName] = useState<string>('');
@@ -8,19 +9,8 @@ const PaginaLogin: React.FC = () => {
   const [error, setError] = useState<string>('');
   const [cargando, setCargando] = useState<boolean>(false);
   
-  const contexto = useContext(ContextoUsuario);
+  const { iniciarSesion } = useContext(ContextoUsuario);
   const navigate = useNavigate();
-
-  // Verificar que el contexto esté disponible
-  if (!contexto) {
-    return (
-      <div className="alert alert-danger">
-        Error: Contexto de usuario no disponible
-      </div>
-    );
-  }
-
-  const { iniciarSesion } = contexto;
 
   const manejarLogin = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
@@ -28,40 +18,56 @@ const PaginaLogin: React.FC = () => {
     setError('');
 
     try {
-      // Validación simple - contraseña fija "123456"
-      if (password !== '123456') {
-        setError('Contraseña incorrecta. Usa "123456"');
-        setCargando(false);
-        return;
-      }
-
+      // Validar campos requeridos
       if (!nickName.trim()) {
         setError('El nickname es requerido');
         setCargando(false);
         return;
       }
 
-      // Simulación de login exitoso
-      const usuarioSimulado = {
-        id: Math.floor(Math.random() * 1000) + 1,
-        nickName: nickName.trim()
-      };
+      // Validar contraseña fija "123456" según el TP
+      if (password !== '123456') {
+        setError('Contraseña incorrecta. Usa "123456"');
+        setCargando(false);
+        return;
+      }
 
-      console.log('Intentando iniciar sesión con:', usuarioSimulado);
+      // Buscar usuario en la API
+      const usuarios = await usuarioService.obtenerUsuarios();
+      const usuarioEncontrado = usuarios.find((u: any) => 
+        u.nickName && u.nickName.toLowerCase() === nickName.toLowerCase().trim()
+      );
+
+      if (!usuarioEncontrado) {
+        setError(`Usuario "${nickName}" no encontrado. Regístrate primero.`);
+        setCargando(false);
+        return;
+      }
+
+      // Iniciar sesión con el usuario encontrado
+      iniciarSesion(usuarioEncontrado);
       
-      // Llamar a la función del contexto
-      iniciarSesion(usuarioSimulado);
-      
-      // Navegar después de un pequeño delay para asegurar que el estado se actualice
+      // Navegar al perfil
       setTimeout(() => {
         navigate('/perfil');
-      }, 100);
+      }, 500);
       
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error en login:', err);
-      setError('Error al iniciar sesión');
+      setError('Error al conectar con el servidor. Verifica que la API esté ejecutándose.');
+    } finally {
       setCargando(false);
     }
+  };
+
+  const manejarCambioNickName = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    setNickName(e.target.value);
+    if (error) setError('');
+  };
+
+  const manejarCambioPassword = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    setPassword(e.target.value);
+    if (error) setError('');
   };
 
   return (
@@ -77,7 +83,7 @@ const PaginaLogin: React.FC = () => {
               {error && (
                 <div className="alert alert-danger d-flex align-items-center" role="alert">
                   <i className="bi bi-exclamation-triangle me-2"></i>
-                  {error}
+                  <div>{error}</div>
                 </div>
               )}
 
@@ -92,10 +98,11 @@ const PaginaLogin: React.FC = () => {
                     className="form-control form-control-lg"
                     id="nickName"
                     value={nickName}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNickName(e.target.value)}
+                    onChange={manejarCambioNickName}
                     placeholder="Ingresa tu nickname"
                     required
                     disabled={cargando}
+                    autoComplete="username"
                   />
                 </div>
 
@@ -109,10 +116,11 @@ const PaginaLogin: React.FC = () => {
                     className="form-control form-control-lg"
                     id="password"
                     value={password}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+                    onChange={manejarCambioPassword}
                     placeholder="Usa 123456 para prueba"
                     required
                     disabled={cargando}
+                    autoComplete="current-password"
                   />
                   <div className="form-text text-muted">
                     <i className="bi bi-info-circle me-1"></i>
@@ -128,7 +136,7 @@ const PaginaLogin: React.FC = () => {
                   {cargando ? (
                     <>
                       <span className="spinner-border spinner-border-sm me-2" role="status"></span>
-                      Iniciando sesión...
+                      Verificando usuario...
                     </>
                   ) : (
                     <>

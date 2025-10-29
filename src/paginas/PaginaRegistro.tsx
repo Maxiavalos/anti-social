@@ -1,6 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ContextoUsuario } from '../contexto/ContextoUsuario';
+import { usuarioService } from '../servicios/api';
 
 interface FormularioRegistro {
   nickName: string;
@@ -16,6 +17,7 @@ const PaginaRegistro: React.FC = () => {
   });
   const [error, setError] = useState<string>('');
   const [cargando, setCargando] = useState<boolean>(false);
+  const [registroExitoso, setRegistroExitoso] = useState<boolean>(false);
   
   const { iniciarSesion } = useContext(ContextoUsuario);
   const navigate = useNavigate();
@@ -26,6 +28,7 @@ const PaginaRegistro: React.FC = () => {
       ...prev,
       [name]: value
     }));
+    if (error) setError('');
   };
 
   const manejarRegistro = async (e: React.FormEvent): Promise<void> => {
@@ -34,9 +37,17 @@ const PaginaRegistro: React.FC = () => {
     setError('');
 
     try {
+      console.log('Iniciando registro...', formulario);
+
       // Validaciones
       if (!formulario.nickName.trim()) {
         setError('El nickname es requerido');
+        setCargando(false);
+        return;
+      }
+
+      if (formulario.nickName.trim().length < 3) {
+        setError('El nickname debe tener al menos 3 caracteres');
         setCargando(false);
         return;
       }
@@ -53,25 +64,71 @@ const PaginaRegistro: React.FC = () => {
         return;
       }
 
-      // Simulación de registro exitoso
-      const usuarioRegistrado = {
-        id: Math.floor(Math.random() * 1000) + 1,
-        nickName: formulario.nickName.trim()
-      };
+      console.log('Buscando usuarios existentes...');
 
-      // En una app real, aquí harías POST /users a la API
-      console.log('Registrando usuario:', usuarioRegistrado);
+      // Verificar si el usuario ya existe
+      const usuariosExistentes = await usuarioService.obtenerUsuarios();
+      console.log('Usuarios existentes:', usuariosExistentes);
+
+      const usuarioExistente = usuariosExistentes.find((u: any) => 
+        u.nickName && u.nickName.toLowerCase() === formulario.nickName.toLowerCase().trim()
+      );
+
+      if (usuarioExistente) {
+        setError(`El nickname "${formulario.nickName}" ya está en uso. Elige otro.`);
+        setCargando(false);
+        return;
+      }
+
+      console.log('Creando usuario en la API...', formulario.nickName);
+
+      // Crear usuario en la API
+      const usuarioCreado = await usuarioService.crearUsuario({
+        nickName: formulario.nickName.trim()
+      });
+
+      console.log('Usuario creado exitosamente:', usuarioCreado);
+      setRegistroExitoso(true);
 
       // Auto-login después del registro
-      iniciarSesion(usuarioRegistrado);
-      navigate('/perfil');
+      setTimeout(() => {
+        iniciarSesion(usuarioCreado);
+        navigate('/perfil');
+      }, 2000);
       
-    } catch (err) {
-      setError('Error al registrar usuario');
+    } catch (err: any) {
+      console.error('Error en registro:', err);
+      setError(err.message || 'Error al registrar usuario. Verifica que la API esté ejecutándose.');
     } finally {
       setCargando(false);
     }
   };
+
+  if (registroExitoso) {
+    return (
+      <div className="container py-5">
+        <div className="row justify-content-center">
+          <div className="col-md-6">
+            <div className="card shadow-lg border-0">
+              <div className="card-body text-center p-5">
+                <div className="text-success mb-4">
+                  <i className="bi bi-check-circle-fill display-1"></i>
+                </div>
+                <h2 className="text-success mb-3">¡Registro Exitoso!</h2>
+                <p className="lead mb-4">
+                  Tu cuenta <strong>@{formulario.nickName}</strong> ha sido creada correctamente.
+                </p>
+                <div className="spinner-border text-primary mb-3" role="status">
+                  <span className="visually-hidden">Redirigiendo...</span>
+                </div>
+                <p className="text-muted">Redirigiendo a tu perfil...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container py-5">
@@ -86,7 +143,7 @@ const PaginaRegistro: React.FC = () => {
               {error && (
                 <div className="alert alert-danger d-flex align-items-center" role="alert">
                   <i className="bi bi-exclamation-triangle me-2"></i>
-                  {error}
+                  <div>{error}</div>
                 </div>
               )}
 
@@ -106,9 +163,11 @@ const PaginaRegistro: React.FC = () => {
                     placeholder="Ej: developer_2024"
                     required
                     disabled={cargando}
+                    autoComplete="username"
+                    minLength={3}
                   />
                   <div className="form-text">
-                    Este será tu nombre de usuario en la plataforma
+                    Este será tu nombre de usuario en la plataforma (mínimo 3 caracteres)
                   </div>
                 </div>
 
@@ -127,7 +186,12 @@ const PaginaRegistro: React.FC = () => {
                     placeholder="Mínimo 6 caracteres"
                     required
                     disabled={cargando}
+                    autoComplete="new-password"
+                    minLength={6}
                   />
+                  <div className="form-text">
+                    La contraseña debe tener al menos 6 caracteres
+                  </div>
                 </div>
 
                 <div className="mb-4">
@@ -145,7 +209,11 @@ const PaginaRegistro: React.FC = () => {
                     placeholder="Repite tu contraseña"
                     required
                     disabled={cargando}
+                    autoComplete="new-password"
                   />
+                  <div className="form-text">
+                    Debe coincidir con la contraseña anterior
+                  </div>
                 </div>
 
                 <button 
@@ -173,17 +241,6 @@ const PaginaRegistro: React.FC = () => {
                   <i className="bi bi-box-arrow-in-right me-2"></i>
                   Ir al Login
                 </Link>
-              </div>
-
-              <div className="alert alert-info mt-4" role="alert">
-                <h6 className="alert-heading">
-                  <i className="bi bi-info-circle me-2"></i>
-                  Información importante
-                </h6>
-                <p className="mb-0 small">
-                  Esta es una versión de demostración. Los datos se guardan localmente 
-                  y se perderán al recargar la página.
-                </p>
               </div>
             </div>
           </div>

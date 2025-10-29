@@ -1,6 +1,7 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ContextoUsuario } from '../contexto/ContextoUsuario';
+import { publicacionService, imagenService } from '../servicios/api';
 
 const PaginaNuevaPublicacion: React.FC = () => {
   const [descripcion, setDescripcion] = useState<string>('');
@@ -65,26 +66,39 @@ const PaginaNuevaPublicacion: React.FC = () => {
         return;
       }
 
+      if (!usuario) {
+        setError('Debes estar logueado para crear una publicación');
+        setCargando(false);
+        return;
+      }
+
       // Filtrar URLs de imágenes vacías y etiquetas
       const urlsImagenes = imagenes.filter(url => url.trim() !== '');
       const etiquetas = obtenerEtiquetasArray();
 
-      // Simulación de envío a la API - Según el documento
-      const nuevaPublicacion = {
+      console.log('Creando publicación en la API...');
+
+      // 1. Crear la publicación en la API
+      const publicacionCreada = await publicacionService.crearPublicacion({
         description: descripcion.trim(),
-        userId: usuario?.id,
-        tags: etiquetas // Según el TP, el campo es "tags" no "etiquetas"
-      };
+        userId: usuario.id,
+        tags: etiquetas
+      });
 
-      console.log('Enviando publicación a POST /posts:', nuevaPublicacion);
+      console.log('Publicación creada:', publicacionCreada);
 
-      // Simular envío a POST /posts
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      // Si hay imágenes, simular POST /postimages para cada una
+      // 2. Si hay imágenes, crearlas asociadas a la publicación
       if (urlsImagenes.length > 0) {
-        console.log('Enviando imágenes a POST /postimages:', urlsImagenes);
-        // En la app real, aquí harías un POST /postimages por cada imagen
+        console.log('Creando imágenes...');
+        const promesasImagenes = urlsImagenes.map(url => 
+          imagenService.crearImagen({
+            url: url.trim(),
+            postId: publicacionCreada.id
+          })
+        );
+        
+        await Promise.all(promesasImagenes);
+        console.log('Imágenes creadas exitosamente');
       }
 
       // Éxito
@@ -95,8 +109,9 @@ const PaginaNuevaPublicacion: React.FC = () => {
         navigate('/perfil');
       }, 2000);
 
-    } catch (err) {
-      setError('Error al crear la publicación. Intenta nuevamente.');
+    } catch (err: any) {
+      console.error('Error creando publicación:', err);
+      setError(err.message || 'Error al crear la publicación. Intenta nuevamente.');
     } finally {
       setCargando(false);
     }
@@ -133,7 +148,6 @@ const PaginaNuevaPublicacion: React.FC = () => {
     <div className="container py-4">
       <div className="row justify-content-center">
         <div className="col-lg-8">
-          {/* Header */}
           <div className="text-center mb-5">
             <h1 className="h2 mb-3">📝 Crear Nueva Publicación</h1>
             <p className="text-muted">
@@ -141,7 +155,6 @@ const PaginaNuevaPublicacion: React.FC = () => {
             </p>
           </div>
 
-          {/* Formulario */}
           <div className="card shadow-lg border-0">
             <div className="card-header bg-primary text-white py-3">
               <h3 className="h5 mb-0">
@@ -159,7 +172,6 @@ const PaginaNuevaPublicacion: React.FC = () => {
               )}
 
               <form onSubmit={manejarEnviar}>
-                {/* Descripción */}
                 <div className="mb-4">
                   <label htmlFor="descripcion" className="form-label fw-semibold">
                     <i className="bi bi-chat-text me-2"></i>
@@ -180,7 +192,6 @@ const PaginaNuevaPublicacion: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Imágenes */}
                 <div className="mb-4">
                   <label className="form-label fw-semibold">
                     <i className="bi bi-image me-2"></i>
@@ -226,7 +237,6 @@ const PaginaNuevaPublicacion: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Etiquetas - Ahora como input de texto */}
                 <div className="mb-4">
                   <label htmlFor="etiquetas" className="form-label fw-semibold">
                     <i className="bi bi-tags me-2"></i>
@@ -256,7 +266,6 @@ const PaginaNuevaPublicacion: React.FC = () => {
                   )}
                 </div>
 
-                {/* Botones de acción */}
                 <div className="d-flex gap-3 justify-content-end pt-3 border-top">
                   <button
                     type="button"
@@ -289,7 +298,6 @@ const PaginaNuevaPublicacion: React.FC = () => {
               </form>
             </div>
           </div>
-          
         </div>
       </div>
     </div>
