@@ -1,27 +1,41 @@
-export interface Publicacion {
+export interface Usuario {
   id: number;
-  descripcion: string;
-  usuarioId: number;
-  fechaCreacion: string;
-  etiquetas: Etiqueta[];
-  imagenes: Imagen[];
-}
-
-export interface Comentario {
-  id: number;
-  contenido: string;
-  usuarioId: number;
-  publicacionId: number;
-  fechaCreacion: string;
+  nickName: string;
+  email?: string;
+  avatar?: string;
+  fechaRegistro?: string;
 }
 
 export interface Etiqueta {
   id: number;
-  nombre: string;
+  name: string; 
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Publicacion {
+  id: number;
+  description: string;  
+  UserId: number;       
+  createdAt: string;    
+  updatedAt?: string;
+  User?: Usuario;
+  Tags?: Etiqueta[];    
+}
+
+export interface Comentario {
+  id: number;
+  content: string;      
+  UserId: number;       
+  PostId: number;      
+  createdAt: string;    
+  updatedAt?: string;
+  User?: Usuario;
 }
 
 export interface Imagen {
   id: number;
   url: string;
-  publicacionId: number;
+  PostId: number;      
+  updatedAt?: string;
 }

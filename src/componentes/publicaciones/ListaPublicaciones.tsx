@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import TarjetaPublicacion from './TarjetaPublicacion';
+import { publicacionService, imagenService, type PublicacionAPI, type ImagenAPI } from '../../servicios/api';
 
 interface Publicacion {
   id: number;
@@ -15,40 +16,58 @@ interface Publicacion {
 const ListaPublicaciones: React.FC = () => {
   const [publicaciones, setPublicaciones] = useState<Publicacion[]>([]);
   const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState('');
+
+  // Función para transformar datos de la API
+  const transformarPublicacion = (publicacionAPI: PublicacionAPI, imagenesUrls: string[]): Publicacion => {
+    return {
+      id: publicacionAPI.id,
+      usuario: publicacionAPI.User?.nickName || 'Usuario',
+      descripcion: publicacionAPI.description,
+      imagenes: imagenesUrls,
+      fechaCreacion: new Date(publicacionAPI.createdAt).toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }),
+      comentariosCount: 0, // Esto necesitaría una consulta adicional
+      meGustaCount: 0, // No hay me gustas en la API actual
+      etiquetas: publicacionAPI.Tags ? publicacionAPI.Tags.map((tag: { name: any; }) => tag.name) : []
+    };
+  };
 
   useEffect(() => {
     const cargarPublicaciones = async () => {
       try {
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        setCargando(true);
+        setError('');
+
+        // Obtener publicaciones desde la API
+        const publicacionesAPI: PublicacionAPI[] = await publicacionService.obtenerPublicaciones();
+
+        // Transformar datos y obtener imágenes para cada publicación
+        const publicacionesTransformadas = await Promise.all(
+          publicacionesAPI.map(async (publicacionAPI: PublicacionAPI) => {
+            let imagenesUrls: string[] = [];
+            try {
+              const imagenesData: ImagenAPI[] = await imagenService.obtenerImagenesPorPublicacion(publicacionAPI.id);
+              imagenesUrls = imagenesData.map((img: ImagenAPI) => img.url);
+            } catch (error) {
+              console.error(`Error cargando imágenes para post ${publicacionAPI.id}:`, error);
+            }
+
+            return transformarPublicacion(publicacionAPI, imagenesUrls);
+          })
+        );
+
+        setPublicaciones(publicacionesTransformadas);
         
-        const datosEjemplo: Publicacion[] = [
-          {
-            id: 1,
-            usuario: 'maria_dev',
-            descripcion: 'Acabo de terminar mi primer proyecto en React con TypeScript. ¡Qué satisfacción ver todo funcionando! ¿Alguien más está aprendiendo desarrollo frontend? Esta aplicación está quedando increíble con todos los componentes que estamos creando.',
-            imagenes: [
-              'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=400',
-              'https://images.unsplash.com/photo-1627398242454-45a1465c2479?w=400'
-            ],
-            fechaCreacion: 'Hace 2 horas',
-            comentariosCount: 8,
-            meGustaCount: 15,
-            etiquetas: ['React', 'TypeScript', 'Desarrollo']
-          },
-          {
-            id: 2,
-            usuario: 'coder_ana',
-            descripcion: '¿Recomiendan algún curso bueno de Bootstrap 5? Quiero mejorar mis habilidades de diseño responsive para que mis aplicaciones se vean bien en todos los dispositivos.',
-            fechaCreacion: 'Hace 5 horas',
-            comentariosCount: 12,
-            meGustaCount: 23,
-            etiquetas: ['Bootstrap', 'CSS', 'Frontend']
-          }
-        ];
-        
-        setPublicaciones(datosEjemplo);
-      } catch (error) {
-        console.error('Error cargando publicaciones:', error);
+      } catch (err: any) {
+        console.error('Error cargando publicaciones:', err);
+        setError('No se pudieron cargar las publicaciones. Verifica que la API esté ejecutándose.');
+        setPublicaciones([]);
       } finally {
         setCargando(false);
       }
@@ -76,6 +95,15 @@ const ListaPublicaciones: React.FC = () => {
           <span className="visually-hidden">Cargando...</span>
         </div>
         <p className="text-muted">Cargando publicaciones...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="alert alert-warning text-center">
+        <h5>No se pudieron cargar las publicaciones</h5>
+        <p className="mb-0">{error}</p>
       </div>
     );
   }

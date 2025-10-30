@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { type ReactNode } from 'react';
 
 export interface Usuario {
+  email: ReactNode;
   id: number;
   nickName: string;
   avatar?: string;
