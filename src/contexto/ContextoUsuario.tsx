@@ -1,11 +1,9 @@
-import React, { type ReactNode } from 'react';
+import React from 'react';
+import type { UsuarioAPI } from '../servicios/api';
 
-export interface Usuario {
-  email: ReactNode;
-  id: number;
-  nickName: string;
-  avatar?: string;
-  fechaRegistro?: string;
+// Usar UsuarioAPI en el contexto para consistencia
+export interface Usuario extends UsuarioAPI {
+  // Puedes agregar campos adicionales específicos del frontend si es necesario
 }
 
 interface ContextoUsuarioType {

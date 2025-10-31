@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import BotonesInteraccion from './BotonesInteraccion';
 
 interface Publicacion {
@@ -25,7 +26,7 @@ const TarjetaPublicacion: React.FC<TarjetaPublicacionProps> = ({
   onNoMeGusta,
   esDetalle = false
 }) => {
-  const [mostrarCompleto, setMostrarCompleto] = useState(esDetalle); // En detalle mostrar completo
+  const [mostrarCompleto, setMostrarCompleto] = useState(esDetalle);
   const limiteTexto = 150;
 
   const textoRecortado = publicacion.descripcion.length > limiteTexto && !mostrarCompleto && !esDetalle
@@ -41,12 +42,22 @@ const TarjetaPublicacion: React.FC<TarjetaPublicacionProps> = ({
       <div className="card-body">
         {/* Header de la publicación */}
         <div className="d-flex align-items-center mb-3">
-          <div className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" 
-               style={{width: '45px', height: '45px', fontSize: '18px', fontWeight: 'bold'}}>
-            {publicacion.usuario.charAt(0).toUpperCase()}
-          </div>
+          <Link 
+            to={`/perfil/${publicacion.usuario}`}
+            className="text-decoration-none d-flex align-items-center"
+          >
+            <div className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" 
+                 style={{width: '45px', height: '45px', fontSize: '18px', fontWeight: 'bold'}}>
+              {publicacion.usuario.charAt(0).toUpperCase()}
+            </div>
+          </Link>
           <div className="flex-grow-1">
-            <h6 className="mb-0 fw-bold">@{publicacion.usuario}</h6>
+            <Link 
+              to={`/perfil/${publicacion.usuario}`}
+              className="text-decoration-none"
+            >
+              <h6 className="mb-0 fw-bold text-dark">@{publicacion.usuario}</h6>
+            </Link>
             <small className="text-muted">
               <i className="bi bi-clock me-1"></i>
               {publicacion.fechaCreacion}

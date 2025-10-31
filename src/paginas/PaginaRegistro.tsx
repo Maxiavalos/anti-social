@@ -5,6 +5,7 @@ import { usuarioService } from '../servicios/api';
 
 interface FormularioRegistro {
   nickName: string;
+  email: string;
   password: string;
   confirmarPassword: string;
 }
@@ -12,6 +13,7 @@ interface FormularioRegistro {
 const PaginaRegistro: React.FC = () => {
   const [formulario, setFormulario] = useState<FormularioRegistro>({
     nickName: '',
+    email: '',
     password: '',
     confirmarPassword: ''
   });
@@ -52,6 +54,18 @@ const PaginaRegistro: React.FC = () => {
         return;
       }
 
+      if (!formulario.email.trim()) {
+        setError('El email es requerido');
+        setCargando(false);
+        return;
+      }
+
+      if (!/\S+@\S+\.\S+/.test(formulario.email)) {
+        setError('El email no tiene un formato válido');
+        setCargando(false);
+        return;
+      }
+
       if (formulario.password.length < 6) {
         setError('La contraseña debe tener al menos 6 caracteres');
         setCargando(false);
@@ -84,7 +98,8 @@ const PaginaRegistro: React.FC = () => {
 
       // Crear usuario en la API
       const usuarioCreado = await usuarioService.crearUsuario({
-        nickName: formulario.nickName.trim()
+        nickName: formulario.nickName.trim(),
+        email: formulario.email.trim()
       });
 
       console.log('Usuario creado exitosamente:', usuarioCreado);
@@ -168,6 +183,28 @@ const PaginaRegistro: React.FC = () => {
                   />
                   <div className="form-text">
                     Este será tu nombre de usuario en la plataforma (mínimo 3 caracteres)
+                  </div>
+                </div>
+
+                <div className="mb-3">
+                  <label htmlFor="email" className="form-label fw-semibold">
+                    <i className="bi bi-envelope me-2"></i>
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    className="form-control form-control-lg"
+                    id="email"
+                    name="email"
+                    value={formulario.email}
+                    onChange={manejarCambio}
+                    placeholder="tu@email.com"
+                    required
+                    disabled={cargando}
+                    autoComplete="email"
+                  />
+                  <div className="form-text">
+                    Usaremos este email para notificaciones importantes
                   </div>
                 </div>
 

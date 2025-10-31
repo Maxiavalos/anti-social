@@ -21,7 +21,7 @@ function App() {
                 <Route path="/" element={<PaginaInicio />} />
                 <Route path="/login" element={<PaginaLogin />} />
                 <Route path="/registro" element={<PaginaRegistro />} />
-                <Route path="/perfil" element={<PaginaPerfil />} />
+                <Route path="/perfil/:usuario?" element={<PaginaPerfil />} />
                 <Route path="/nueva-publicacion" element={<PaginaNuevaPublicacion />} />
                 <Route path="/publicacion/:id" element={<PaginaDetallePublicacion />} />
               </Routes>

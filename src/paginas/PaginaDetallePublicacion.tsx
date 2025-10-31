@@ -41,7 +41,7 @@ const PaginaDetallePublicacion: React.FC = () => {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
 
-  // Función para transformar datos de la API al formato del frontend
+
   const transformarPublicacion = (publicacionAPI: PublicacionAPI, imagenesUrls: string[]): Publicacion => {
     return {
       id: publicacionAPI.id,
@@ -94,7 +94,7 @@ const PaginaDetallePublicacion: React.FC = () => {
         const publicacionId = parseInt(id);
         console.log('Cargando publicación ID:', publicacionId);
 
-        // Verificar funciones disponibles (para debugging)
+        
         console.log('Funciones de imagenService:', Object.keys(imagenService));
         console.log('Funciones de comentarioService:', Object.keys(comentarioService));
 
@@ -105,7 +105,7 @@ const PaginaDetallePublicacion: React.FC = () => {
         // Cargar imágenes de la publicación
         let imagenesData: ImagenAPI[] = [];
         try {
-          // VERIFICAR: esta función debe llamarse exactamente así en api.js
+          
           imagenesData = await imagenService.obtenerImagenesPorPublicacion(publicacionId);
           console.log('Imágenes cargadas:', imagenesData);
         } catch (error) {
@@ -117,12 +117,12 @@ const PaginaDetallePublicacion: React.FC = () => {
         // Cargar comentarios
         let comentariosData: ComentarioAPI[] = [];
         try {
-          // VERIFICAR: esta función debe llamarse exactamente así en api.js
+          
           comentariosData = await comentarioService.obtenerComentariosPorPublicacion(publicacionId);
           console.log('Comentarios cargados:', comentariosData);
         } catch (error) {
           console.error('Error cargando comentarios:', error);
-          // Si falla, continuar sin comentarios
+          
           comentariosData = [];
         }
 
@@ -309,14 +309,24 @@ const PaginaDetallePublicacion: React.FC = () => {
                   {comentarios.map((comentario) => (
                     <div key={comentario.id} className="border-bottom pb-3 mb-3">
                       <div className="d-flex align-items-start mb-2">
-                        <div className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" 
-                             style={{width: '35px', height: '35px', fontSize: '14px'}}>
-                          {comentario.usuario.charAt(0).toUpperCase()}
-                        </div>
+                        <Link 
+                          to={`/perfil/${comentario.usuario}`}
+                          className="text-decoration-none"
+                        >
+                          <div className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" 
+                              style={{width: '35px', height: '35px', fontSize: '14px'}}>
+                            {comentario.usuario.charAt(0).toUpperCase()}
+                          </div>
+                        </Link>
                         <div className="flex-grow-1">
                           <div className="d-flex justify-content-between align-items-start">
                             <div>
-                              <h6 className="mb-0 fw-bold">@{comentario.usuario}</h6>
+                              <Link 
+                                to={`/perfil/${comentario.usuario}`}
+                                className="text-decoration-none"
+                              >
+                                <h6 className="mb-0 fw-bold text-dark">@{comentario.usuario}</h6>
+                              </Link>
                               <small className="text-muted">{comentario.fechaCreacion}</small>
                             </div>
                             <button 

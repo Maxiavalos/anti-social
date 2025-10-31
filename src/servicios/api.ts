@@ -44,6 +44,12 @@ export interface ImagenAPI {
   updatedAt?: string;
 }
 
+export interface UploadResponse {
+  success: boolean;
+  imageUrl: string;
+  filename: string;
+}
+
 // Servicio para usuarios
 export const usuarioService = {
   obtenerUsuarios: async (): Promise<UsuarioAPI[]> => {
@@ -171,13 +177,12 @@ export const publicacionService = {
   }
 };
 
-// Servicio de comentarios - VERSIÓN CORREGIDA
+// Servicio de comentarios
 export const comentarioService = {
   obtenerComentariosPorPublicacion: async (postId: number): Promise<ComentarioAPI[]> => {
     try {
       const response = await fetch(`${API_BASE_URL}/comments/post/${postId}`);
       if (!response.ok) {
-        // Si no hay comentarios, devolver array vacío
         return [];
       }
       const comentarios = await response.json();
@@ -266,6 +271,36 @@ export const imagenService = {
   }
 };
 
+// Servicio de upload de imágenes
+export const uploadService = {
+  subirImagen: async (file: File): Promise<UploadResponse> => {
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      console.log('Subiendo imagen:', file.name, file.size, file.type);
+      
+      const response = await fetch(`${API_BASE_URL}/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Error ${response.status} al subir la imagen`);
+      }
+      
+      const result = await response.json();
+      console.log('Imagen subida exitosamente:', result);
+      return result;
+      
+    } catch (error) {
+      console.error('Error subiendo imagen:', error);
+      throw error;
+    }
+  }
+};
+
 // Función de utilidad para verificar la conexión con la API
 export const verificarConexionAPI = async (): Promise<boolean> => {
   try {
@@ -277,23 +312,14 @@ export const verificarConexionAPI = async (): Promise<boolean> => {
   }
 };
 
-// Función para inicializar datos de prueba (opcional)
-export const inicializarDatosPrueba = async (): Promise<void> => {
+// Función para verificar que el endpoint de upload funciona
+export const verificarUpload = async (): Promise<boolean> => {
   try {
-    // Verificar si ya hay usuarios
-    const usuarios = await usuarioService.obtenerUsuarios();
-    if (usuarios.length === 0) {
-      console.log('Inicializando datos de prueba...');
-      
-      // Crear usuario de prueba
-      const usuarioPrueba = await usuarioService.crearUsuario({
-        nickName: 'usuario_prueba',
-        email: 'prueba@ejemplo.com'
-      });
-      
-      console.log('Usuario de prueba creado:', usuarioPrueba);
-    }
+    const response = await fetch(`${API_BASE_URL}/upload`, { method: 'POST' });
+    // Si responde con error de método o falta de archivo, significa que el endpoint existe
+    return response.status !== 404;
   } catch (error) {
-    console.error('Error inicializando datos de prueba:', error);
+    console.error('Endpoint /upload no disponible:', error);
+    return false;
   }
 };

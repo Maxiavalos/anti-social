@@ -4,31 +4,40 @@ export interface Usuario {
   email?: string;
   avatar?: string;
   fechaRegistro?: string;
+  createdAt?: string; 
+}
+
+export interface UsuarioAPI {
+  id: number;
+  nickName: string;
+  email: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Etiqueta {
   id: number;
-  name: string; 
+  name: string;
   createdAt?: string;
   updatedAt?: string;
 }
 
 export interface Publicacion {
   id: number;
-  description: string;  
-  UserId: number;       
-  createdAt: string;    
+  description: string;
+  UserId: number;
+  createdAt: string;
   updatedAt?: string;
   User?: Usuario;
-  Tags?: Etiqueta[];    
+  Tags?: Etiqueta[];
 }
 
 export interface Comentario {
   id: number;
-  content: string;      
-  UserId: number;       
-  PostId: number;      
-  createdAt: string;    
+  content: string;
+  UserId: number;
+  PostId: number;
+  createdAt: string;
   updatedAt?: string;
   User?: Usuario;
 }
@@ -36,6 +45,7 @@ export interface Comentario {
 export interface Imagen {
   id: number;
   url: string;
-  PostId: number;      
+  PostId: number;
+  createdAt?: string;
   updatedAt?: string;
 }

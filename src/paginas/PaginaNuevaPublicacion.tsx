@@ -1,16 +1,25 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ContextoUsuario } from '../contexto/ContextoUsuario';
-import { publicacionService, imagenService } from '../servicios/api';
+import { publicacionService, imagenService, etiquetaService, uploadService, type EtiquetaAPI } from '../servicios/api';
+
+interface ImagenPreview {
+  file: File;
+  previewUrl: string;
+  uploadProgress?: number;
+  isUploading?: boolean;
+}
 
 const PaginaNuevaPublicacion: React.FC = () => {
   const [descripcion, setDescripcion] = useState<string>('');
-  const [imagenes, setImagenes] = useState<string[]>(['']);
-  const [etiquetasInput, setEtiquetasInput] = useState<string>('');
+  const [imagenes, setImagenes] = useState<ImagenPreview[]>([]);
+  const [etiquetasDisponibles, setEtiquetasDisponibles] = useState<EtiquetaAPI[]>([]);
+  const [etiquetasSeleccionadas, setEtiquetasSeleccionadas] = useState<number[]>([]);
   const [cargando, setCargando] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [enviado, setEnviado] = useState<boolean>(false);
-
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { usuario, estaLogueado } = useContext(ContextoUsuario);
   const navigate = useNavigate();
 
@@ -21,30 +30,107 @@ const PaginaNuevaPublicacion: React.FC = () => {
     }
   }, [estaLogueado, navigate]);
 
-  const manejarAgregarImagen = (): void => {
-    setImagenes(prev => [...prev, '']);
-  };
+  // Cargar etiquetas disponibles
+  useEffect(() => {
+    const cargarEtiquetas = async () => {
+      try {
+        const tags = await etiquetaService.obtenerEtiquetas();
+        setEtiquetasDisponibles(tags);
+      } catch (error) {
+        console.error('Error cargando etiquetas:', error);
+      }
+    };
+    cargarEtiquetas();
+  }, []);
 
-  const manejarCambioImagen = (index: number, url: string): void => {
-    const nuevasImagenes = [...imagenes];
-    nuevasImagenes[index] = url;
-    setImagenes(nuevasImagenes);
-  };
+  // Manejar selección de archivos
+  const manejarSeleccionArchivos = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
 
-  const manejarEliminarImagen = (index: number): void => {
-    if (imagenes.length > 1) {
-      const nuevasImagenes = imagenes.filter((_, i) => i !== index);
-      setImagenes(nuevasImagenes);
+    const nuevasImagenes: ImagenPreview[] = [];
+    
+    Array.from(files).forEach(file => {
+      // Validar tipo de archivo
+      if (!file.type.startsWith('image/')) {
+        setError(`El archivo ${file.name} no es una imagen válida`);
+        return;
+      }
+
+      // Validar tamaño (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setError(`La imagen ${file.name} es demasiado grande (máximo 5MB)`);
+        return;
+      }
+
+      // Crear preview
+      const previewUrl = URL.createObjectURL(file);
+      nuevasImagenes.push({
+        file,
+        previewUrl,
+        isUploading: false
+      });
+    });
+
+    // Limitar a 5 imágenes
+    const totalImagenes = [...imagenes, ...nuevasImagenes].slice(0, 5);
+    setImagenes(totalImagenes);
+    
+    // Limpiar input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
-  // Convertir texto de etiquetas a array
-  const obtenerEtiquetasArray = (): string[] => {
-    return etiquetasInput
-      .split(',')
-      .map(tag => tag.trim())
-      .filter(tag => tag.length > 0)
-      .map(tag => tag.startsWith('#') ? tag.substring(1) : tag);
+  // Manejar drag and drop
+  const manejarDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const manejarDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      const inputEvent = {
+        target: { files }
+      } as React.ChangeEvent<HTMLInputElement>;
+      manejarSeleccionArchivos(inputEvent);
+    }
+  };
+
+  // Eliminar imagen
+  const manejarEliminarImagen = (index: number) => {
+    // Revocar URL del objeto para liberar memoria
+    URL.revokeObjectURL(imagenes[index].previewUrl);
+    
+    const nuevasImagenes = imagenes.filter((_, i) => i !== index);
+    setImagenes(nuevasImagenes);
+  };
+
+  // Abrir selector de archivos
+  const abrirSelectorArchivos = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  // Subir imagen individual
+  const subirImagen = async (imagen: ImagenPreview): Promise<string> => {
+    try {
+      const resultado = await uploadService.subirImagen(imagen.file);
+      return resultado.imageUrl;
+    } catch (error) {
+      console.error('Error subiendo imagen:', error);
+      throw new Error(`No se pudo subir la imagen: ${imagen.file.name}`);
+    }
+  };
+
+  const manejarSeleccionEtiqueta = (etiquetaId: number): void => {
+    setEtiquetasSeleccionadas(prev => 
+      prev.includes(etiquetaId) 
+        ? prev.filter(id => id !== etiquetaId)
+        : [...prev, etiquetaId]
+    );
   };
 
   const manejarEnviar = async (e: React.FormEvent): Promise<void> => {
@@ -72,37 +158,48 @@ const PaginaNuevaPublicacion: React.FC = () => {
         return;
       }
 
-      // Filtrar URLs de imágenes vacías y etiquetas
-      const urlsImagenes = imagenes.filter(url => url.trim() !== '');
-      const etiquetas = obtenerEtiquetasArray();
-
-      console.log('Creando publicación en la API...');
+      console.log('Creando publicación...');
 
       // 1. Crear la publicación en la API
       const publicacionCreada = await publicacionService.crearPublicacion({
         description: descripcion.trim(),
         userId: usuario.id,
-        tags: etiquetas
+        tagIds: etiquetasSeleccionadas.length > 0 ? etiquetasSeleccionadas : undefined
       });
 
       console.log('Publicación creada:', publicacionCreada);
 
-      // 2. Si hay imágenes, crearlas asociadas a la publicación
-      if (urlsImagenes.length > 0) {
-        console.log('Creando imágenes...');
-        const promesasImagenes = urlsImagenes.map(url => 
-          imagenService.crearImagen({
-            url: url.trim(),
-            postId: publicacionCreada.id
-          })
-        );
+      // 2. Subir imágenes y asociarlas a la publicación
+      if (imagenes.length > 0) {
+        console.log('Subiendo imágenes...');
         
+        // Subir todas las imágenes en paralelo
+        const promesasImagenes = imagenes.map(async (imagen) => {
+          try {
+            const imageUrl = await subirImagen(imagen);
+            
+            // Crear la imagen en la base de datos
+            await imagenService.crearImagen({
+              url: imageUrl,
+              postId: publicacionCreada.id
+            });
+            
+            return imageUrl;
+          } catch (error) {
+            console.error('Error procesando imagen:', error);
+            throw error;
+          }
+        });
+
         await Promise.all(promesasImagenes);
-        console.log('Imágenes creadas exitosamente');
+        console.log('Todas las imágenes subidas exitosamente');
       }
 
       // Éxito
       setEnviado(true);
+      
+      // Limpiar previews de imágenes
+      imagenes.forEach(imagen => URL.revokeObjectURL(imagen.previewUrl));
       
       // Redirigir después de 2 segundos
       setTimeout(() => {
@@ -116,6 +213,13 @@ const PaginaNuevaPublicacion: React.FC = () => {
       setCargando(false);
     }
   };
+
+  // Limpiar previews al desmontar el componente
+  useEffect(() => {
+    return () => {
+      imagenes.forEach(imagen => URL.revokeObjectURL(imagen.previewUrl));
+    };
+  }, [imagenes]);
 
   if (!estaLogueado) {
     return (
@@ -167,7 +271,7 @@ const PaginaNuevaPublicacion: React.FC = () => {
               {error && (
                 <div className="alert alert-danger d-flex align-items-center" role="alert">
                   <i className="bi bi-exclamation-triangle me-2"></i>
-                  {error}
+                  <div>{error}</div>
                 </div>
               )}
 
@@ -195,73 +299,135 @@ const PaginaNuevaPublicacion: React.FC = () => {
                 <div className="mb-4">
                   <label className="form-label fw-semibold">
                     <i className="bi bi-image me-2"></i>
-                    URLs de Imágenes (Opcional)
+                    Imágenes (Opcional)
                   </label>
                   
-                  {imagenes.map((url, index) => (
-                    <div key={index} className="input-group mb-2">
-                      <input
-                        type="url"
-                        className="form-control"
-                        placeholder="https://ejemplo.com/imagen.jpg"
-                        value={url}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
-                          manejarCambioImagen(index, e.target.value)
-                        }
-                        disabled={cargando}
-                      />
-                      {imagenes.length > 1 && (
-                        <button
-                          type="button"
-                          className="btn btn-outline-danger"
-                          onClick={() => manejarEliminarImagen(index)}
-                          disabled={cargando}
-                        >
-                          <i className="bi bi-trash"></i>
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                  
-                  <button
-                    type="button"
-                    className="btn btn-outline-primary btn-sm"
-                    onClick={manejarAgregarImagen}
-                    disabled={cargando || imagenes.length >= 5}
+                  {/* Área de drag and drop */}
+                  <div 
+                    className="border border-dashed border-secondary rounded-3 p-5 text-center mb-3 bg-light"
+                    onDragOver={manejarDragOver}
+                    onDrop={manejarDrop}
+                    style={{ cursor: 'pointer' }}
+                    onClick={abrirSelectorArchivos}
                   >
-                    <i className="bi bi-plus-circle me-1"></i>
-                    Agregar otra imagen
-                  </button>
-                  <div className="form-text">
-                    Máximo 5 imágenes. Puedes agregar URLs de imágenes.
+                    <i className="bi bi-cloud-arrow-up display-4 text-muted mb-3"></i>
+                    <h5 className="text-muted">Haz clic o arrastra imágenes aquí</h5>
+                    <p className="text-muted mb-0">
+                      Formatos: JPEG, PNG, GIF, WebP • Máximo 5MB por imagen • Máximo 5 imágenes
+                    </p>
+                  </div>
+
+                  {/* Input oculto para seleccionar archivos */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    className="d-none"
+                    multiple
+                    accept="image/jpeg,image/png,image/gif,image/webp"
+                    onChange={manejarSeleccionArchivos}
+                    disabled={cargando || imagenes.length >= 5}
+                  />
+
+                  {/* Botón para agregar más imágenes (si hay espacio) */}
+                  {imagenes.length > 0 && imagenes.length < 5 && (
+                    <div className="text-center mb-3">
+                      <button
+                        type="button"
+                        className="btn btn-outline-primary"
+                        onClick={abrirSelectorArchivos}
+                        disabled={cargando}
+                      >
+                        <i className="bi bi-plus-circle me-2"></i>
+                        Agregar más imágenes
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Previews de imágenes */}
+                  {imagenes.length > 0 && (
+                    <div className="row g-3 mb-3">
+                      {imagenes.map((imagen, index) => (
+                        <div key={index} className="col-6 col-md-4">
+                          <div className="card position-relative">
+                            <img 
+                              src={imagen.previewUrl} 
+                              alt={`Preview ${index + 1}`}
+                              className="card-img-top"
+                              style={{ height: '120px', objectFit: 'cover' }}
+                            />
+                            <button
+                              type="button"
+                              className="btn btn-danger btn-sm position-absolute top-0 end-0 m-1"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                manejarEliminarImagen(index);
+                              }}
+                              disabled={cargando}
+                            >
+                              <i className="bi bi-x"></i>
+                            </button>
+                            <div className="card-body p-2">
+                              <small className="text-muted d-block text-truncate">
+                                {imagen.file.name}
+                              </small>
+                              <small className="text-muted">
+                                {(imagen.file.size / 1024 / 1024).toFixed(2)} MB
+                              </small>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  <div className="form-text text-center">
+                    {imagenes.length}/5 imágenes seleccionadas
                   </div>
                 </div>
 
                 <div className="mb-4">
-                  <label htmlFor="etiquetas" className="form-label fw-semibold">
+                  <label className="form-label fw-semibold">
                     <i className="bi bi-tags me-2"></i>
                     Etiquetas (Opcional)
                   </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    id="etiquetas"
-                    value={etiquetasInput}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEtiquetasInput(e.target.value)}
-                    placeholder="react, typescript, bootstrap (separadas por comas)"
-                    disabled={cargando}
-                  />
-                  <div className="form-text">
-                    Separa las etiquetas con comas. Ejemplo: "react, typescript, unahur"
-                  </div>
-                  {etiquetasInput && (
-                    <div className="mt-2">
-                      <small className="text-muted">Etiquetas detectadas: </small>
-                      {obtenerEtiquetasArray().map((tag, index) => (
-                        <span key={index} className="badge bg-secondary me-1">
-                          #{tag}
-                        </span>
+                  
+                  {etiquetasDisponibles.length === 0 ? (
+                    <p className="text-muted">Cargando etiquetas...</p>
+                  ) : (
+                    <div className="d-flex flex-wrap gap-2">
+                      {etiquetasDisponibles.map((etiqueta) => (
+                        <button
+                          key={etiqueta.id}
+                          type="button"
+                          className={`btn btn-sm ${
+                            etiquetasSeleccionadas.includes(etiqueta.id) 
+                              ? 'btn-primary' 
+                              : 'btn-outline-primary'
+                          }`}
+                          onClick={() => manejarSeleccionEtiqueta(etiqueta.id)}
+                          disabled={cargando}
+                        >
+                          #{etiqueta.name}
+                        </button>
                       ))}
+                    </div>
+                  )}
+                  
+                  <div className="form-text mt-2">
+                    Selecciona las etiquetas que mejor describan tu publicación
+                  </div>
+                  
+                  {etiquetasSeleccionadas.length > 0 && (
+                    <div className="mt-2">
+                      <small className="text-muted">Etiquetas seleccionadas: </small>
+                      {etiquetasSeleccionadas.map(id => {
+                        const etiqueta = etiquetasDisponibles.find(t => t.id === id);
+                        return etiqueta ? (
+                          <span key={id} className="badge bg-primary me-1">
+                            #{etiqueta.name}
+                          </span>
+                        ) : null;
+                      })}
                     </div>
                   )}
                 </div>
