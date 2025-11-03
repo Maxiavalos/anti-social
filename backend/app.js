@@ -13,6 +13,7 @@ const postRoutes = require('./routes/posts');
 const commentRoutes = require('./routes/comments');
 const tagRoutes = require('./routes/tags');
 const postImageRoutes = require('./routes/postimages');
+const likeRoutes = require('./routes/like')
 
 app.use(cors());
 app.use(express.json());
@@ -58,6 +59,7 @@ app.use('/posts', postRoutes);
 app.use('/comments', commentRoutes);
 app.use('/tags', tagRoutes);
 app.use('/postimages', postImageRoutes);
+app.use('/likes', likeRoutes)
 
 // Ruta para subir archivos
 app.post('/upload', upload.single('image'), (req, res) => {

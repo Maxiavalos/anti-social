@@ -16,10 +16,12 @@ const Comment = require('./comment')(sequelize);
 const Tag = require('./tag')(sequelize);
 const PostTag = require('./postTag')(sequelize);
 const PostImage = require('./postImage')(sequelize);
+const Like = require('./like')(sequelize)
 
 // Relaciones
 User.hasMany(Post);
 Post.belongsTo(User);
+User.hasMany(Like);
 
 Post.hasMany(Comment);
 Comment.belongsTo(Post);
@@ -31,6 +33,10 @@ Tag.belongsToMany(Post, { through: PostTag });
 Post.hasMany(PostImage);
 PostImage.belongsTo(Post);
 
+Post.hasMany(Like);
+Like.belongsTo(User);
+Like.belongsTo(Post);
+
 module.exports = {
   sequelize,
   User,
@@ -38,5 +44,6 @@ module.exports = {
   Comment,
   Tag,
   PostTag,
-  PostImage
+  PostImage,
+  Like
 };
