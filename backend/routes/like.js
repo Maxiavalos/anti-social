@@ -5,8 +5,8 @@ const {Like} = require('../models');
 
 router.post('/posts/:postId', async (req, res) => {
     try {
-        const postId = req.params
-        const userId = req.params.userId
+        const postId = req.params.id
+        const {userId} = req.body
 
         const existeLike = await Like.findOne({
             where: {userId, postId}
@@ -24,7 +24,7 @@ router.post('/posts/:postId', async (req, res) => {
     }
 });
 
-router.get('/posts/:postId', async (req, res) => {
+router.get('/posts/:postId/count', async (req, res) => {
   try {
     const { postId } = req.params;
     
@@ -36,6 +36,21 @@ router.get('/posts/:postId', async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: 'Error al obtener likes' });
   }
+});
+
+router.get('/posts/:postId/check', async (req, res) => {
+    try {
+        const { postId } = req.params;
+        const userId = req.query;
+
+        const userLike = await Like.findOne({
+            where: { userId, postId }
+        });
+
+        res.json({ liked: !!userLike });
+    } catch (error) {
+        res.status(500).json({ error: 'Error al verificar like' });
+    }
 });
 
 module.exports = router;

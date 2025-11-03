@@ -49,3 +49,23 @@ export interface Imagen {
   createdAt?: string;
   updatedAt?: string;
 }
+
+export interface Like {
+  id: number;
+  userId: string;
+  postId: number;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface LikeResponse {
+  liked: boolean;
+}
+
+export interface LikeCountResponse {
+  count: number;
+}
+
+export interface LikeCheckResponse {
+  liked: boolean;
+}
