@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ContextoUsuario } from '../contexto/ContextoUsuario';
-import { publicacionService, imagenService, usuarioService, type PublicacionAPI, type ImagenAPI, type UsuarioAPI } from '../servicios/api';
+import { publicacionService, imagenService, usuarioService, type PublicacionAPI, type ImagenAPI, type UsuarioAPI, comentarioService } from '../servicios/api';
 
 interface PublicacionUsuario {
   id: number;
@@ -87,7 +87,7 @@ const PaginaPerfil: React.FC = () => {
                 month: 'long',
                 day: 'numeric'
               }),
-              comentariosCount: 0, // Por simplicidad
+              comentariosCount: (await comentarioService.obtenerComentariosPorPublicacion(post.id)).length, // Por simplicidad
               imagenes: imagenesUrls,
               etiquetas: post.Tags ? post.Tags.map(tag => tag.name) : []
             };

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import TarjetaPublicacion from './TarjetaPublicacion';
-import { publicacionService, imagenService, type PublicacionAPI, type ImagenAPI } from '../../servicios/api';
+import { comentarioService, publicacionService, imagenService, type PublicacionAPI, type ImagenAPI } from '../../servicios/api';
 
 interface Publicacion {
   id: number;
@@ -19,7 +19,7 @@ const ListaPublicaciones: React.FC = () => {
   const [error, setError] = useState('');
 
   // Función para transformar datos de la API
-  const transformarPublicacion = (publicacionAPI: PublicacionAPI, imagenesUrls: string[]): Publicacion => {
+  const transformarPublicacion = async (publicacionAPI: PublicacionAPI, imagenesUrls: string[]): Promise<Publicacion> => {
     return {
       id: publicacionAPI.id,
       usuario: publicacionAPI.User?.nickName || 'Usuario',
@@ -32,7 +32,7 @@ const ListaPublicaciones: React.FC = () => {
         hour: '2-digit',
         minute: '2-digit'
       }),
-      comentariosCount: 0, // Esto necesitaría una consulta adicional
+      comentariosCount: (await comentarioService.obtenerComentariosPorPublicacion(publicacionAPI.id)).length, // Esto necesitaría una consulta adicional
       meGustaCount: 0, // No hay me gustas en la API actual
       etiquetas: publicacionAPI.Tags ? publicacionAPI.Tags.map((tag: { name: any; }) => tag.name) : []
     };
