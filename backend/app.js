@@ -13,7 +13,7 @@ const postRoutes = require('./routes/posts');
 const commentRoutes = require('./routes/comments');
 const tagRoutes = require('./routes/tags');
 const postImageRoutes = require('./routes/postimages');
-const likeRoutes = require('./routes/like')
+const likeRoutes = require('./routes/likes')
 
 app.use(cors());
 app.use(express.json());

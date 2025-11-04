@@ -82,7 +82,7 @@ Para levantar el proyecto y comenzar a interactuar con la API:
     ```
 2.  **En el VS Code nos posicionamos sobre el directorio:**
     ```bash
-    cd unahur-anti-social-net-frontend
+    cd anti-social
     ```
 3.  **Instalar dependencias:**
     ```bash

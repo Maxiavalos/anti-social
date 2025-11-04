@@ -1,11 +1,13 @@
-module.exports = (sequelize, DataTypes) =>
+const { DataTypes } = require('sequelize');
+
+module.exports = (sequelize) =>
   sequelize.define('Like', {
     id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true
     },
-    userId: {
+    UserId: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
@@ -13,7 +15,7 @@ module.exports = (sequelize, DataTypes) =>
         key: 'id'
       }
     },
-    postId: {
+    PostId: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
@@ -21,11 +23,11 @@ module.exports = (sequelize, DataTypes) =>
         key: 'id'
       }
     }
-  },{
+  }, {
     indexes: [
       {
         unique: true,
-        fields: ['userId', 'postId']
+        fields: ['UserId', 'PostId'] 
       }
     ]
-});
+  });

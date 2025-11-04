@@ -1,6 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import TarjetaPublicacion from './TarjetaPublicacion';
+import { ContextoUsuario } from '../../contexto/ContextoUsuario';
+import TarjetaPublicacion from '../../componentes/publicaciones/TarjetaPublicacion';
+import { 
+  publicacionService, 
+  comentarioService, 
+  imagenService,
+  likeService,
+  type PublicacionAPI,
+  type ComentarioAPI,
+  type ImagenAPI 
+} from '../../servicios/api';
 
 interface Publicacion {
   id: number;
@@ -11,6 +21,7 @@ interface Publicacion {
   comentariosCount: number;
   meGustaCount: number;
   etiquetas?: string[];
+  userLiked?: boolean;
 }
 
 interface Comentario {
@@ -19,90 +30,135 @@ interface Comentario {
   contenido: string;
   fechaCreacion: string;
   meGustaCount: number;
+  userId: number;
 }
 
 const PaginaDetallePublicacion: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { usuario } = useContext(ContextoUsuario);
   const [publicacion, setPublicacion] = useState<Publicacion | null>(null);
   const [comentarios, setComentarios] = useState<Comentario[]>([]);
   const [nuevoComentario, setNuevoComentario] = useState('');
   const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState('');
 
-  // Simular datos de la publicación
+  
+  const cargarDatosLikes = async (publicacionId: number) => {
+    try {
+      const [likeCountResponse, likeCheckResponse] = await Promise.all([
+        likeService.obtenerLikesCount(publicacionId),
+        usuario ? likeService.verificarLike(publicacionId, usuario.id) : Promise.resolve({ liked: false })
+      ]);
+
+      return {
+        meGustaCount: likeCountResponse.likeCount,
+        userLiked: likeCheckResponse.liked
+      };
+    } catch (error) {
+      console.error('Error cargando datos de likes:', error);
+      return {
+        meGustaCount: 0,
+        userLiked: false
+      };
+    }
+  };
+
+  const transformarPublicacion = async (publicacionAPI: PublicacionAPI, imagenesUrls: string[], comentariosCount: number): Promise<Publicacion> => {
+    const datosLikes = await cargarDatosLikes(publicacionAPI.id);
+
+    return {
+      id: publicacionAPI.id,
+      usuario: publicacionAPI.User?.nickName || 'Usuario',
+      descripcion: publicacionAPI.description,
+      imagenes: imagenesUrls,
+      fechaCreacion: new Date(publicacionAPI.createdAt).toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }),
+      comentariosCount: comentariosCount,
+      meGustaCount: datosLikes.meGustaCount,
+      userLiked: datosLikes.userLiked,
+      etiquetas: publicacionAPI.Tags ? publicacionAPI.Tags.map(tag => tag.name) : []
+    };
+  };
+
+  const transformarComentario = (comentarioAPI: ComentarioAPI): Comentario => {
+    return {
+      id: comentarioAPI.id,
+      usuario: comentarioAPI.User?.nickName || 'Usuario',
+      contenido: comentarioAPI.content,
+      fechaCreacion: new Date(comentarioAPI.createdAt).toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }),
+      meGustaCount: 0,
+      userId: comentarioAPI.UserId
+    };
+  };
+
+  
   useEffect(() => {
     const cargarDatos = async () => {
+      if (!id) {
+        setCargando(false);
+        setError('ID de publicación no válido');
+        return;
+      }
+
       try {
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        // Datos de ejemplo
-        const publicacionesEjemplo: Publicacion[] = [
-          {
-            id: 1,
-            usuario: 'maria_dev',
-            descripcion: 'Acabo de terminar mi primer proyecto en React con TypeScript. ¡Qué satisfacción ver todo funcionando! ¿Alguien más está aprendiendo desarrollo frontend? Esta aplicación está quedando increíble con todos los componentes que estamos creando. Me encanta cómo React permite crear interfaces tan dinámicas y responsivas.\n\n¿Qué librerías de UI recomiendan para proyectos académicos?',
-            imagenes: [
-              'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=500',
-              'https://images.unsplash.com/photo-1627398242454-45a1465c2479?w=500'
-            ],
-            fechaCreacion: 'Hace 2 horas',
-            comentariosCount: 8,
-            meGustaCount: 15,
-            etiquetas: ['React', 'TypeScript', 'Desarrollo', 'Frontend']
-          },
-          {
-            id: 2,
-            usuario: 'coder_ana',
-            descripcion: '¿Recomiendan algún curso bueno de Bootstrap 5? Quiero mejorar mis habilidades de diseño responsive para que mis aplicaciones se vean bien en todos los dispositivos.',
-            fechaCreacion: 'Hace 5 horas',
-            comentariosCount: 12,
-            meGustaCount: 23,
-            etiquetas: ['Bootstrap', 'CSS', 'Frontend', 'Responsive']
-          },
-          {
-            id: 3,
-            usuario: 'tech_lover',
-            descripcion: 'Compartiendo mi setup de desarrollo actual: VS Code + React + Bootstrap + TypeScript. ¡Productividad al máximo! Los atajos de teclado y los snippets me están salvando la vida en este proyecto.',
-            imagenes: [
-              'https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=500'
-            ],
-            fechaCreacion: 'Hace 1 día',
-            comentariosCount: 5,
-            meGustaCount: 31,
-            etiquetas: ['Setup', 'Productividad', 'Tools', 'VS Code']
-          }
-        ];
+        setCargando(true);
+        setError('');
 
-        const comentariosEjemplo: Comentario[] = [
-          {
-            id: 1,
-            usuario: 'dev_experto',
-            contenido: '¡Felicidades! React + TypeScript es una combinación excelente. Te recomiendo explorar React Query para el manejo de estado del servidor.',
-            fechaCreacion: 'Hace 1 hora',
-            meGustaCount: 3
-          },
-          {
-            id: 2,
-            usuario: 'frontend_master',
-            contenido: 'Muy buen trabajo. Para librerías de UI, te recomiendo Material-UI o Chakra UI, son muy completas.',
-            fechaCreacion: 'Hace 45 minutos',
-            meGustaCount: 2
-          },
-          {
-            id: 3,
-            usuario: 'code_newbie',
-            contenido: 'Estoy empezando también con React. ¿Algún consejo para alguien que recién comienza?',
-            fechaCreacion: 'Hace 30 minutos',
-            meGustaCount: 1
-          }
-        ];
+        const publicacionId = parseInt(id);
+        console.log('Cargando publicación ID:', publicacionId);
 
-        const pubEncontrada = publicacionesEjemplo.find(p => p.id === parseInt(id || '0'));
-        setPublicacion(pubEncontrada || null);
-        setComentarios(comentariosEjemplo);
+        // Cargar publicación
+        const publicacionData: PublicacionAPI = await publicacionService.obtenerPublicacionPorId(publicacionId);
+        console.log('Publicación cargada:', publicacionData);
         
-      } catch (error) {
-        console.error('Error cargando publicación:', error);
+        // Cargar imágenes de la publicación
+        let imagenesData: ImagenAPI[] = [];
+        try {
+          imagenesData = await imagenService.obtenerImagenesPorPublicacion(publicacionId);
+          console.log('Imágenes cargadas:', imagenesData);
+        } catch (error) {
+          console.error('Error cargando imágenes:', error);
+          imagenesData = [];
+        }
+
+        // Cargar comentarios
+        let comentariosData: ComentarioAPI[] = [];
+        try {
+          comentariosData = await comentarioService.obtenerComentariosPorPublicacion(publicacionId);
+          console.log('Comentarios cargados:', comentariosData);
+        } catch (error) {
+          console.error('Error cargando comentarios:', error);
+          comentariosData = [];
+        }
+
+        // Transformar datos
+        const imagenesUrls = imagenesData.map(img => img.url);
+        const comentariosTransformados = comentariosData.map(transformarComentario);
+        
+        const publicacionTransformada = await transformarPublicacion(
+          publicacionData, 
+          imagenesUrls, 
+          comentariosTransformados.length
+        );
+
+        setPublicacion(publicacionTransformada);
+        setComentarios(comentariosTransformados);
+        
+      } catch (err: any) {
+        console.error('Error cargando publicación:', err);
+        setError('No se pudo cargar la publicación. Verifica que exista.');
       } finally {
         setCargando(false);
       }
@@ -111,22 +167,62 @@ const PaginaDetallePublicacion: React.FC = () => {
     cargarDatos();
   }, [id]);
 
-  const manejarMeGusta = (publicacionId: number) => {
-    if (publicacion) {
-      setPublicacion({
-        ...publicacion,
-        meGustaCount: publicacion.meGustaCount + 1
-      });
+  const manejarToggleLike = async (publicacionId: number) => {
+    if (!usuario) {
+      setError('Debes iniciar sesión para dar me gusta');
+      return;
+    }
+
+    try {
+      console.log(`Procesando like para publicación ${publicacionId} del usuario ${usuario.id}`);
+      
+      // Llamar al servicio real de likes 
+      const response = await likeService.toggleLike(publicacionId, usuario.id);
+      console.log('Respuesta del like:', response);
+      
+      if (publicacion) {
+        // Actualizar contador 
+        const nuevoMeGustaCount = response.liked 
+          ? publicacion.meGustaCount + 1 
+          : Math.max(0, publicacion.meGustaCount - 1);
+
+        console.log(`Actualizando publicación ${publicacionId}: meGustaCount=${nuevoMeGustaCount}, userLiked=${response.liked}`);
+
+        setPublicacion({
+          ...publicacion,
+          meGustaCount: nuevoMeGustaCount,
+          userLiked: response.liked
+        });
+
+      
+        setTimeout(async () => {
+          try {
+            const datosActualizados = await cargarDatosLikes(publicacionId);
+            setPublicacion(prev => prev ? {
+              ...prev,
+              meGustaCount: datosActualizados.meGustaCount,
+              userLiked: datosActualizados.userLiked
+            } : null);
+            console.log(`Datos actualizados desde API para publicación ${publicacionId}:`, datosActualizados);
+          } catch (error) {
+            console.error(`Error actualizando datos desde API para publicación ${publicacionId}:`, error);
+          }
+        }, 100);
+      }
+      
+    } catch (error: any) {
+      console.error('Error al procesar like:', error);
+      setError('No se pudo procesar el me gusta: ' + error.message);
     }
   };
 
+ 
+  const manejarMeGusta = (publicacionId: number) => {
+    manejarToggleLike(publicacionId);
+  };
+
   const manejarNoMeGusta = (publicacionId: number) => {
-    if (publicacion) {
-      setPublicacion({
-        ...publicacion,
-        meGustaCount: Math.max(0, publicacion.meGustaCount - 1)
-      });
-    }
+    manejarToggleLike(publicacionId);
   };
 
   const manejarMeGustaComentario = (comentarioId: number) => {
@@ -135,27 +231,45 @@ const PaginaDetallePublicacion: React.FC = () => {
     ));
   };
 
-  const manejarEnviarComentario = (e: React.FormEvent) => {
+  const manejarEnviarComentario = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nuevoComentario.trim()) return;
+    if (!nuevoComentario.trim() || !usuario || !publicacion) return;
 
-    const nuevoCom: Comentario = {
-      id: Date.now(),
-      usuario: 'yo', // En una app real sería el usuario logueado
-      contenido: nuevoComentario.trim(),
-      fechaCreacion: 'Ahora mismo',
-      meGustaCount: 0
-    };
-
-    setComentarios(prev => [nuevoCom, ...prev]);
-    setNuevoComentario('');
-    
-    // Actualizar contador de comentarios en la publicación
-    if (publicacion) {
-      setPublicacion({
-        ...publicacion,
-        comentariosCount: publicacion.comentariosCount + 1
+    try {
+      console.log('Enviando comentario para publicación:', publicacion.id);
+      
+      // Crear comentario en la API
+      const comentarioCreado = await comentarioService.crearComentario({
+        content: nuevoComentario.trim(),
+        userId: usuario.id,
+        postId: publicacion.id
       });
+
+      console.log('Comentario creado en API:', comentarioCreado);
+
+      // Transformar y agregar el nuevo comentario a la lista
+      const nuevoCom: Comentario = {
+        id: comentarioCreado.id,
+        usuario: usuario.nickName,
+        contenido: comentarioCreado.content,
+        fechaCreacion: 'Hace un momento',
+        meGustaCount: 0,
+        userId: usuario.id
+      };
+
+      // Agregar el nuevo comentario al inicio de la lista
+      setComentarios(prev => [nuevoCom, ...prev]);
+      setNuevoComentario('');
+      
+      // Actualizar contador de comentarios en la publicación
+      setPublicacion(prev => prev ? {
+        ...prev,
+        comentariosCount: prev.comentariosCount + 1
+      } : null);
+      
+    } catch (error: any) {
+      console.error('Error creando comentario:', error);
+      setError('No se pudo enviar el comentario: ' + error.message);
     }
   };
 
@@ -172,12 +286,12 @@ const PaginaDetallePublicacion: React.FC = () => {
     );
   }
 
-  if (!publicacion) {
+  if (error || !publicacion) {
     return (
       <div className="container py-4">
         <div className="alert alert-danger text-center">
           <h4>Publicación no encontrada</h4>
-          <p>La publicación que buscas no existe o ha sido eliminada.</p>
+          <p>{error || 'La publicación que buscas no existe o ha sido eliminada.'}</p>
           <Link to="/" className="btn btn-primary">Volver al Inicio</Link>
         </div>
       </div>
@@ -196,6 +310,12 @@ const PaginaDetallePublicacion: React.FC = () => {
         </button>
       </div>
 
+      {error && (
+        <div className="alert alert-danger mb-4">
+          {error}
+        </div>
+      )}
+
       <div className="row justify-content-center">
         <div className="col-lg-8">
           {/* Publicación principal */}
@@ -213,46 +333,60 @@ const PaginaDetallePublicacion: React.FC = () => {
             </div>
             
             {/* Formulario de nuevo comentario */}
-            <div className="card-body border-bottom">
-              <form onSubmit={manejarEnviarComentario}>
-                <div className="mb-3">
-                  <textarea
-                    className="form-control"
-                    rows={3}
-                    placeholder="Escribe tu comentario..."
-                    value={nuevoComentario}
-                    onChange={(e) => setNuevoComentario(e.target.value)}
-                  />
-                </div>
-                <div className="d-flex justify-content-end">
-                  <button 
-                    type="submit" 
-                    className="btn btn-primary"
-                    disabled={!nuevoComentario.trim()}
-                  >
-                    Comentar
-                  </button>
-                </div>
-              </form>
-            </div>
+            {usuario && (
+              <div className="card-body border-bottom">
+                <form onSubmit={manejarEnviarComentario}>
+                  <div className="mb-3">
+                    <textarea
+                      className="form-control"
+                      rows={3}
+                      placeholder="Escribe tu comentario..."
+                      value={nuevoComentario}
+                      onChange={(e) => setNuevoComentario(e.target.value)}
+                    />
+                  </div>
+                  <div className="d-flex justify-content-end">
+                    <button 
+                      type="submit" 
+                      className="btn btn-primary"
+                      disabled={!nuevoComentario.trim()}
+                    >
+                      Comentar
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
 
             {/* Lista de comentarios */}
             <div className="card-body">
               {comentarios.length === 0 ? (
-                <p className="text-muted text-center py-3">No hay comentarios aún. ¡Sé el primero en comentar!</p>
+                <p className="text-muted text-center py-3">
+                  {usuario ? 'No hay comentarios aún. ¡Sé el primero en comentar!' : 'Inicia sesión para comentar'}
+                </p>
               ) : (
-                <div className="space-y-3">
+                <div>
                   {comentarios.map((comentario) => (
                     <div key={comentario.id} className="border-bottom pb-3 mb-3">
                       <div className="d-flex align-items-start mb-2">
-                        <div className="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center me-3" 
-                             style={{width: '35px', height: '35px', fontSize: '14px'}}>
-                          {comentario.usuario.charAt(0).toUpperCase()}
-                        </div>
+                        <Link 
+                          to={`/perfil/${comentario.usuario}`}
+                          className="text-decoration-none"
+                        >
+                          <div className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" 
+                              style={{width: '35px', height: '35px', fontSize: '14px'}}>
+                            {comentario.usuario.charAt(0).toUpperCase()}
+                          </div>
+                        </Link>
                         <div className="flex-grow-1">
                           <div className="d-flex justify-content-between align-items-start">
                             <div>
-                              <h6 className="mb-0 fw-bold">@{comentario.usuario}</h6>
+                              <Link 
+                                to={`/perfil/${comentario.usuario}`}
+                                className="text-decoration-none"
+                              >
+                                <h6 className="mb-0 fw-bold text-dark">@{comentario.usuario}</h6>
+                              </Link>
                               <small className="text-muted">{comentario.fechaCreacion}</small>
                             </div>
                             <button 

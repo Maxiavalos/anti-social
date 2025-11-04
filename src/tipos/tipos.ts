@@ -50,9 +50,10 @@ export interface Imagen {
   updatedAt?: string;
 }
 
+
 export interface Like {
   id: number;
-  userId: string;
+  userId: number; 
   postId: number;
   createdAt?: Date;
   updatedAt?: Date;
@@ -63,7 +64,7 @@ export interface LikeResponse {
 }
 
 export interface LikeCountResponse {
-  count: number;
+  likeCount: number;
 }
 
 export interface LikeCheckResponse {

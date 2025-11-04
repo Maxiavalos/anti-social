@@ -6,6 +6,7 @@ import {
   publicacionService, 
   comentarioService, 
   imagenService,
+  likeService,
   type PublicacionAPI,
   type ComentarioAPI,
   type ImagenAPI 
@@ -20,6 +21,7 @@ interface Publicacion {
   comentariosCount: number;
   meGustaCount: number;
   etiquetas?: string[];
+  userLiked?: boolean;
 }
 
 interface Comentario {
@@ -41,8 +43,30 @@ const PaginaDetallePublicacion: React.FC = () => {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
 
+  // Función para cargar los datos reales de likes desde la API
+  const cargarDatosLikes = async (publicacionId: number) => {
+    try {
+      const [likeCountResponse, likeCheckResponse] = await Promise.all([
+        likeService.obtenerLikesCount(publicacionId),
+        usuario ? likeService.verificarLike(publicacionId, usuario.id) : Promise.resolve({ liked: false })
+      ]);
 
-  const transformarPublicacion = (publicacionAPI: PublicacionAPI, imagenesUrls: string[]): Publicacion => {
+      return {
+        meGustaCount: likeCountResponse.likeCount,
+        userLiked: likeCheckResponse.liked
+      };
+    } catch (error) {
+      console.error('Error cargando datos de likes:', error);
+      return {
+        meGustaCount: 0,
+        userLiked: false
+      };
+    }
+  };
+
+  const transformarPublicacion = async (publicacionAPI: PublicacionAPI, imagenesUrls: string[], comentariosCount: number): Promise<Publicacion> => {
+    const datosLikes = await cargarDatosLikes(publicacionAPI.id);
+
     return {
       id: publicacionAPI.id,
       usuario: publicacionAPI.User?.nickName || 'Usuario',
@@ -55,8 +79,9 @@ const PaginaDetallePublicacion: React.FC = () => {
         hour: '2-digit',
         minute: '2-digit'
       }),
-      comentariosCount: comentarios.length,
-      meGustaCount: 0,
+      comentariosCount: comentariosCount,
+      meGustaCount: datosLikes.meGustaCount, // ← DATOS REALES DE LA API
+      userLiked: datosLikes.userLiked, // ← DATOS REALES DE LA API
       etiquetas: publicacionAPI.Tags ? publicacionAPI.Tags.map(tag => tag.name) : []
     };
   };
@@ -78,6 +103,24 @@ const PaginaDetallePublicacion: React.FC = () => {
     };
   };
 
+  // Función para recargar los datos de la publicación
+  const recargarPublicacion = async () => {
+    if (!id || !publicacion) return;
+
+    try {
+      const publicacionId = parseInt(id);
+      const datosLikes = await cargarDatosLikes(publicacionId);
+      
+      setPublicacion(prev => prev ? {
+        ...prev,
+        meGustaCount: datosLikes.meGustaCount,
+        userLiked: datosLikes.userLiked
+      } : null);
+    } catch (error) {
+      console.error('Error recargando publicación:', error);
+    }
+  };
+
   // Cargar datos de la publicación
   useEffect(() => {
     const cargarDatos = async () => {
@@ -94,10 +137,6 @@ const PaginaDetallePublicacion: React.FC = () => {
         const publicacionId = parseInt(id);
         console.log('Cargando publicación ID:', publicacionId);
 
-        
-        console.log('Funciones de imagenService:', Object.keys(imagenService));
-        console.log('Funciones de comentarioService:', Object.keys(comentarioService));
-
         // Cargar publicación
         const publicacionData: PublicacionAPI = await publicacionService.obtenerPublicacionPorId(publicacionId);
         console.log('Publicación cargada:', publicacionData);
@@ -105,24 +144,20 @@ const PaginaDetallePublicacion: React.FC = () => {
         // Cargar imágenes de la publicación
         let imagenesData: ImagenAPI[] = [];
         try {
-          
           imagenesData = await imagenService.obtenerImagenesPorPublicacion(publicacionId);
           console.log('Imágenes cargadas:', imagenesData);
         } catch (error) {
           console.error('Error cargando imágenes:', error);
-          // Si falla, continuar sin imágenes
           imagenesData = [];
         }
 
         // Cargar comentarios
         let comentariosData: ComentarioAPI[] = [];
         try {
-          
           comentariosData = await comentarioService.obtenerComentariosPorPublicacion(publicacionId);
           console.log('Comentarios cargados:', comentariosData);
         } catch (error) {
           console.error('Error cargando comentarios:', error);
-          
           comentariosData = [];
         }
 
@@ -130,8 +165,11 @@ const PaginaDetallePublicacion: React.FC = () => {
         const imagenesUrls = imagenesData.map(img => img.url);
         const comentariosTransformados = comentariosData.map(transformarComentario);
         
-        const publicacionTransformada = transformarPublicacion(publicacionData, imagenesUrls);
-        publicacionTransformada.comentariosCount = comentariosTransformados.length;
+        const publicacionTransformada = await transformarPublicacion(
+          publicacionData, 
+          imagenesUrls, 
+          comentariosTransformados.length
+        );
 
         setPublicacion(publicacionTransformada);
         setComentarios(comentariosTransformados);
@@ -147,22 +185,32 @@ const PaginaDetallePublicacion: React.FC = () => {
     cargarDatos();
   }, [id]);
 
-  const manejarMeGusta = (publicacionId: number) => {
-    if (publicacion) {
-      setPublicacion({
-        ...publicacion,
-        meGustaCount: publicacion.meGustaCount + 1
-      });
+  const manejarToggleLike = async (publicacionId: number) => {
+    if (!usuario) {
+      setError('Debes iniciar sesión para dar me gusta');
+      return;
+    }
+
+    try {
+      // Llamar al servicio real de likes
+      const response = await likeService.toggleLike(publicacionId, usuario.id);
+      
+      // RECARGAR LOS DATOS REALES DESDE LA API después del like
+      await recargarPublicacion();
+      
+    } catch (error: any) {
+      console.error('Error al procesar like:', error);
+      setError('No se pudo procesar el me gusta: ' + error.message);
     }
   };
 
+  // Para mantener compatibilidad con TarjetaPublicacion
+  const manejarMeGusta = (publicacionId: number) => {
+    manejarToggleLike(publicacionId);
+  };
+
   const manejarNoMeGusta = (publicacionId: number) => {
-    if (publicacion) {
-      setPublicacion({
-        ...publicacion,
-        meGustaCount: Math.max(0, publicacion.meGustaCount - 1)
-      });
-    }
+    manejarToggleLike(publicacionId);
   };
 
   const manejarMeGustaComentario = (comentarioId: number) => {

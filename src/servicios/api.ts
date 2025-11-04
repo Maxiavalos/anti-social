@@ -50,6 +50,19 @@ export interface UploadResponse {
   filename: string;
 }
 
+// Interfaces para likes
+export interface LikeResponse {
+  liked: boolean;
+}
+
+export interface LikeCountResponse {
+  likeCount: number;
+}
+
+export interface LikeCheckResponse {
+  liked: boolean;
+}
+
 // Servicio para usuarios
 export const usuarioService = {
   obtenerUsuarios: async (): Promise<UsuarioAPI[]> => {
@@ -174,6 +187,23 @@ export const publicacionService = {
       console.error('Error creando publicación:', error);
       throw error;
     }
+  },
+
+  eliminarPublicacion: async (id: number): Promise<{ success: boolean }> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/posts/${id}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error ${response.status} al eliminar publicación`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error eliminando publicación:', error);
+      throw error;
+    }
   }
 };
 
@@ -187,7 +217,6 @@ export const comentarioService = {
       }
       const comentarios = await response.json();
       
-      // FILTRAR SOLO COMENTARIOS DE ESTE POST (doble verificación)
       return comentarios.filter((comentario: ComentarioAPI) => 
         comentario.PostId === postId
       );
@@ -301,6 +330,57 @@ export const uploadService = {
   }
 };
 
+// Servicio de likes
+export const likeService = {
+  toggleLike: async (postId: number, userId: number): Promise<LikeResponse> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/likes/posts/${postId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Error ${response.status} al procesar like`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error en toggleLike:', error);
+      throw error;
+    }
+  },
+
+  obtenerLikesCount: async (postId: number): Promise<LikeCountResponse> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/likes/posts/${postId}/count`);
+      if (!response.ok) {
+        throw new Error(`Error ${response.status} al obtener conteo de likes`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error obteniendo conteo de likes:', error);
+      throw error;
+    }
+  },
+
+  verificarLike: async (postId: number, userId: number): Promise<LikeCheckResponse> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/likes/posts/${postId}/check?userId=${userId}`);
+      if (!response.ok) {
+        throw new Error(`Error ${response.status} al verificar like`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error verificando like:', error);
+      throw error;
+    }
+  }
+};
+
 // Función de utilidad para verificar la conexión con la API
 export const verificarConexionAPI = async (): Promise<boolean> => {
   try {
@@ -316,7 +396,6 @@ export const verificarConexionAPI = async (): Promise<boolean> => {
 export const verificarUpload = async (): Promise<boolean> => {
   try {
     const response = await fetch(`${API_BASE_URL}/upload`, { method: 'POST' });
-    // Si responde con error de método o falta de archivo, significa que el endpoint existe
     return response.status !== 404;
   } catch (error) {
     console.error('Endpoint /upload no disponible:', error);
