@@ -13,7 +13,7 @@ function App() {
   return (
     <ProveedorUsuario>
       <Router>
-        <div className="d-flex flex-column min-vh-100 bg-light">
+        <div className="d-flex flex-column min-vh-100 app-bg">
           <Cabecera />
           <main className="flex-grow-1 py-4">
             <div className="container">

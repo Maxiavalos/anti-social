@@ -150,11 +150,11 @@ const PaginaPerfil: React.FC = () => {
   }
 
   return (
-    <div className="container py-4">
+    <div className="container py-4 pagina-perfil">
       {/* Header del Perfil */}
       <div className="row mb-5">
         <div className="col-md-8 mx-auto">
-          <div className="card shadow-sm border-0">
+          <div className="card shadow-sm border-0 perfil-card">
             <div className="card-body text-center p-5">
               <div className="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
                    style={{width: '80px', height: '80px', fontSize: '32px'}}>
@@ -237,7 +237,7 @@ const PaginaPerfil: React.FC = () => {
             <div className="row g-3">
               {publicaciones.map((publicacion) => (
                 <div key={publicacion.id} className="col-12">
-                  <div className="card shadow-sm border-0">
+                  <div className="card shadow-sm border-0 perfil-card">
                     <div className="card-body">
                       <p className="card-text">{publicacion.descripcion}</p>
                       

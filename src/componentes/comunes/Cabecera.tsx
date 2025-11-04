@@ -1,6 +1,8 @@
 import React, { useContext, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { ContextoUsuario } from "../../contexto/ContextoUsuario";
+import logo from '../../assets/logo.png';
+import banner from '../../assets/banner.png';
 
 const Cabecera: React.FC = () => {
   const { estaLogueado, cerrarSesion, usuario } = useContext(ContextoUsuario);
@@ -40,13 +42,19 @@ const Cabecera: React.FC = () => {
   return (
     <>
       {/* Navbar Principal */}
-      <nav className="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+      <nav className="navbar navbar-expand-lg navbar-light bg-success-subtle shadow-sm border-bottom border-success">
         <div className="container">
           {/* Logo */}
           <Link to="/" className="navbar-brand fw-bold d-flex align-items-center" onClick={manejarNavegacion}>
             <div className="bg-white text-primary rounded-circle d-flex align-items-center justify-content-center me-2" 
                  style={{width: '32px', height: '32px'}}>
-              <span className="fw-bold">U</span>
+              <img src={logo} alt="Logo de la aplicación" 
+                style={{ 
+                  width: '100%', 
+                  height: '100%', 
+                  objectFit: 'cover',
+                  borderRadius: '50%'
+            }}/>
             </div>
             UnaHur Anti-Social
           </Link>
@@ -121,7 +129,7 @@ const Cabecera: React.FC = () => {
                   </Link>
                 </li>
                 <li className="nav-item">
-                  <Link to="/registro" className={`btn btn-outline-light btn-sm ms-2 ${esPaginaActiva("/registro")}`} onClick={manejarNavegacion}>
+                  <Link to="/registro" className={`btn btn-primary btn-sm ms-2 ${esPaginaActiva("/registro")}`} onClick={manejarNavegacion}>
                     Registrarse
                   </Link>
                 </li>
@@ -191,26 +199,34 @@ const Cabecera: React.FC = () => {
 
       {/* Banner de Bienvenida (solo en homepage) */}
       {location.pathname === "/" && (
-        <div className="bg-gradient-primary text-white py-5 shadow">
-          <div className="container text-center">
-            <h1 className="display-5 fw-bold mb-3">🚀 Bienvenido a UnaHur Anti-Social</h1>
-            <p className="lead mb-4">
-              La red social donde lo importante es el contenido, no los likes.
-              Comparte tus pensamientos sin distracciones.
-            </p>
-            {!estaLogueado && (
-              <div className="d-flex gap-3 justify-content-center flex-wrap">
-                <Link to="/registro" className="btn btn-light btn-lg" onClick={manejarNavegacion}>
-                  Comenzar Ahora
-                </Link>
-                <Link to="/login" className="btn btn-outline-light btn-lg" onClick={manejarNavegacion}>
-                  Ingresar
-                </Link>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+        <div className="banner-container shadow">
+    <img
+      src={banner}
+      alt="Banner principal"
+      className="banner-img"
+    />
+
+    {/* Botones opcionales si no está logueado */}
+    {!estaLogueado && (
+      <div className="banner-buttons text-center">
+        <Link
+          to="/registro"
+          className="btn btn-light btn-lg mx-2"
+          onClick={manejarNavegacion}
+        >
+          Comenzar Ahora
+        </Link>
+        <Link
+          to="/login"
+          className="btn btn-outline-light btn-lg mx-2"
+          onClick={manejarNavegacion}
+        >
+          Ingresar
+        </Link>
+      </div>
+    )}
+  </div>
+)}
 
       <style>{`
         .bg-gradient-primary {
@@ -225,6 +241,35 @@ const Cabecera: React.FC = () => {
         .dropdown-menu.show {
           display: block;
         }
+        .banner-container {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    background-color: #000;
+  }
+  .banner-img {
+    width: 100%;
+    max-height: 380px;
+    object-position: center 60%;
+    object-fit: cover;
+    display: block;
+  }
+  .banner-buttons {
+    position: absolute;
+    bottom: 20px;
+    left: 0;
+    right: 0;
+  }
+  @media (max-width: 768px) {
+    .banner-img {
+      max-height: 250px;
+    }
+    .banner-buttons .btn {
+      font-size: 1rem;
+      padding: 0.6rem 1.2rem;
+    }
+  }
+
       `}</style>
     </>
   );

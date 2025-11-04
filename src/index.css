@@ -1,68 +1,120 @@
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+*, *::before, *::after {
+  box-sizing: border-box;
+}
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
+/* Reservar siempre el espacio de la scrollbar para evitar saltos visuales */
+html {
+  scrollbar-gutter: stable;
+}
+
+/* Forzar la barra vertical (evita "salto" cuando aparece/desaparece) */
+body {
+  min-height: 100vh;
+  margin: 0;
+  overflow-y: scroll;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
+/* Variables de tema */
+:root {
+  --app-bg: #e6f7e6; /* verde claro */
+  --page-max-width: 1140px;
+  --content-padding-y: 1rem;
+  --card-bg: rgba(255, 255, 255, 0.95);
+  --text-color: #213547;
 }
 
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
+/* Tipografía base y color */
+html, body, #root {
+  height: 100%;
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: var(--text-color);
+  background-color: transparent;
+}
+
+/* Clase que deberías aplicar al contenedor raíz (ver paso 3) */
+.app-bg {
+  background-color: var(--app-bg) !important;
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+/* Asegura que el main crezca y tenga padding */
+.app-bg main, .app-bg main .container {
+  flex: 1 0 auto;
+  padding-top: var(--content-padding-y);
+  padding-bottom: var(--content-padding-y);
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+/* Mantener legibilidad de componentes blancos */
+.app-bg .card,
+.app-bg .modal-content,
+.app-bg .dropdown-menu,
+.app-bg .popover,
+.app-bg .offcanvas {
+  background-color: var(--card-bg);
+  border-color: rgba(0,0,0,0.06);
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+.app-bg .bg-white {
+  background-color: var(--card-bg) !important;
 }
+
+/* Imágenes seguras para responsive (evita overflow causado por img) */
+img, picture, svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Banner global seguro: si usás <div class="app-banner"><img.../></div> */
+.app-banner {
+  width: 100%;
+  overflow: hidden;
+  display: block;
+  max-height: 320px;
+  background-color: transparent;
+}
+.app-banner img {
+  display: block;
+  width: 100%;
+  height: 320px;
+  object-fit: cover;
+  object-position: center 70%; /* muestra más la parte inferior */
+}
+
+/* Móvil: alturas más pequeñas */
+@media (max-width: 768px) {
+  .app-banner { max-height: 180px; }
+  .app-banner img { height: 180px; object-position: center 75%; }
+}
+
+/* Evitar que elementos con width:100vw rompan el layout */
+body * {
+  max-width: 100vw;
+}
+
+/* Estilos sólo para la página de perfil - fondo del recuadro */
+.pagina-perfil .perfil-card {
+  background-color: #d0f0d0;       /* color verde claro (ajustalo si querés) */
+  border-radius: 0.75rem;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.05);
+  color: inherit;
+}
+
+/* Asegurarnos que el body del card no ponga bg blanco por dentro */
+.pagina-perfil .perfil-card .card-body,
+.pagina-perfil .perfil-card .bg-white {
+  background-color: transparent;
+}
+
+/*.pagina-perfil .perfil-card .bg-white,
+.pagina-perfil .perfil-card .card-body > .bg-white {
+  background-color: transparent;
+}*/
