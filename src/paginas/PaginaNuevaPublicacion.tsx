@@ -1,3 +1,4 @@
+
 import React, { useState, useContext, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ContextoUsuario } from '../contexto/ContextoUsuario';
@@ -13,57 +14,37 @@ interface ImagenPreview {
 const PaginaNuevaPublicacion: React.FC = () => {
   const [descripcion, setDescripcion] = useState<string>('');
   const [imagenes, setImagenes] = useState<ImagenPreview[]>([]);
-  const [etiquetasDisponibles, setEtiquetasDisponibles] = useState<EtiquetaAPI[]>([]);
   const [etiquetasSeleccionadas, setEtiquetasSeleccionadas] = useState<number[]>([]);
   const [cargando, setCargando] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [enviado, setEnviado] = useState<boolean>(false);
-  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { usuario, estaLogueado } = useContext(ContextoUsuario);
   const navigate = useNavigate();
+  const [nuevoNombreEtiqueta, setNuevoNombreEtiqueta] = useState<string>('');
+  const [creandoEtiqueta, setCreandoEtiqueta] = useState<boolean>(false);
+  const [mensajeBotonEtiqueta, setMensajeBotonEtiqueta] = useState<string>('');
 
-  // Redirigir si no está logueado
   useEffect(() => {
     if (!estaLogueado) {
       navigate('/login');
     }
   }, [estaLogueado, navigate]);
 
-  // Cargar etiquetas disponibles
-  useEffect(() => {
-    const cargarEtiquetas = async () => {
-      try {
-        const tags = await etiquetaService.obtenerEtiquetas();
-        setEtiquetasDisponibles(tags);
-      } catch (error) {
-        console.error('Error cargando etiquetas:', error);
-      }
-    };
-    cargarEtiquetas();
-  }, []);
-
   // Manejar selección de archivos
   const manejarSeleccionArchivos = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
-
     const nuevasImagenes: ImagenPreview[] = [];
-    
     Array.from(files).forEach(file => {
-      // Validar tipo de archivo
       if (!file.type.startsWith('image/')) {
         setError(`El archivo ${file.name} no es una imagen válida`);
         return;
       }
-
-      // Validar tamaño (5MB)
       if (file.size > 5 * 1024 * 1024) {
         setError(`La imagen ${file.name} es demasiado grande (máximo 5MB)`);
         return;
       }
-
-      // Crear preview
       const previewUrl = URL.createObjectURL(file);
       nuevasImagenes.push({
         file,
@@ -119,33 +100,24 @@ const PaginaNuevaPublicacion: React.FC = () => {
     try {
       const resultado = await uploadService.subirImagen(imagen.file);
       return resultado.imageUrl;
-    } catch (error) {
-      console.error('Error subiendo imagen:', error);
+    } catch (err) {
+      console.error('Error subiendo imagen:', err);
       throw new Error(`No se pudo subir la imagen: ${imagen.file.name}`);
     }
   };
 
-  const manejarSeleccionEtiqueta = (etiquetaId: number): void => {
-    setEtiquetasSeleccionadas(prev => 
-      prev.includes(etiquetaId) 
-        ? prev.filter(id => id !== etiquetaId)
-        : [...prev, etiquetaId]
-    );
-  };
-
+  // función principal para enviar la publicación (crea tag pendiente si hubiera)
   const manejarEnviar = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     setCargando(true);
     setError('');
 
     try {
-      // Validaciones
       if (!descripcion.trim()) {
         setError('La descripción es obligatoria');
         setCargando(false);
         return;
       }
-
       if (descripcion.trim().length < 10) {
         setError('La descripción debe tener al menos 10 caracteres');
         setCargando(false);
@@ -157,50 +129,70 @@ const PaginaNuevaPublicacion: React.FC = () => {
         setCargando(false);
         return;
       }
-
       console.log('Creando publicación...');
+      const nameNuevo = (nuevoNombreEtiqueta || '').trim();
+      if (nameNuevo && etiquetasSeleccionadas.length === 0) {
+        setCreandoEtiqueta(true);
+        try {
+          
+          const resTag = await fetch('http://localhost:3001/tags', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: nameNuevo })
+          });
 
-      // 1. Crear la publicación en la API
-      const publicacionCreada = await publicacionService.crearPublicacion({
+          if (resTag && resTag.ok) {
+            const tagCreado = await resTag.json();
+            
+            setEtiquetasSeleccionadas([tagCreado.id]);
+            console.log('Etiqueta creada automáticamente y seleccionada al enviar:', tagCreado);
+          } else {
+            const texto = resTag ? await resTag.text().catch(() => '') : '';
+            console.warn('No se pudo crear la etiqueta nueva al enviar. Respuesta:', resTag?.status, texto);
+            
+            setError('Advertencia: No se pudo crear la nueva etiqueta. Continuar sin ella.');
+          }
+        } catch (err) {
+            console.error('Error en fetch POST /tags al enviar:', err);
+            setError('Advertencia: Error de red al intentar crear la nueva etiqueta. Continuar sin ella.');
+        } finally {
+            setCreandoEtiqueta(false);
+        }
+      }
+
+      
+      const payload = {
         description: descripcion.trim(),
         userId: usuario.id,
+        
         tagIds: etiquetasSeleccionadas.length > 0 ? etiquetasSeleccionadas : undefined
-      });
+      };
 
+      const publicacionCreada = await publicacionService.crearPublicacion(payload);
       console.log('Publicación creada:', publicacionCreada);
 
-      // 2. Subir imágenes y asociarlas a la publicación
+      
       if (imagenes.length > 0) {
         console.log('Subiendo imágenes...');
         
-        // Subir todas las imágenes en paralelo
+        
         const promesasImagenes = imagenes.map(async (imagen) => {
-          try {
-            const imageUrl = await subirImagen(imagen);
-            
-            // Crear la imagen en la base de datos
-            await imagenService.crearImagen({
-              url: imageUrl,
-              postId: publicacionCreada.id
-            });
-            
-            return imageUrl;
-          } catch (error) {
-            console.error('Error procesando imagen:', error);
-            throw error;
-          }
+          const imageUrl = await subirImagen(imagen);
+
+          await imagenService.crearImagen({
+            url: imageUrl,
+            postId: publicacionCreada.id
+          });
+
+          return imageUrl;
         });
 
         await Promise.all(promesasImagenes);
         console.log('Todas las imágenes subidas exitosamente');
       }
-
-      // Éxito
       setEnviado(true);
-      
-      // Limpiar previews de imágenes
       imagenes.forEach(imagen => URL.revokeObjectURL(imagen.previewUrl));
-      
+
       // Redirigir después de 2 segundos
       setTimeout(() => {
         navigate('/perfil');
@@ -208,13 +200,12 @@ const PaginaNuevaPublicacion: React.FC = () => {
 
     } catch (err: any) {
       console.error('Error creando publicación:', err);
-      setError(err.message || 'Error al crear la publicación. Intenta nuevamente.');
+      setError(err?.message || 'Error al crear la publicación. Intenta nuevamente.');
     } finally {
       setCargando(false);
     }
   };
 
-  // Limpiar previews al desmontar el componente
   useEffect(() => {
     return () => {
       imagenes.forEach(imagen => URL.revokeObjectURL(imagen.previewUrl));
@@ -309,11 +300,13 @@ const PaginaNuevaPublicacion: React.FC = () => {
                     onDrop={manejarDrop}
                     style={{ cursor: 'pointer' }}
                     onClick={abrirSelectorArchivos}
-                  >
+                    // Deshabilitar si ya se alcanzó el límite
+                    data-bs-toggle={imagenes.length >= 5 ? 'tooltip' : ''}
+                    title={imagenes.length >= 5 ? 'Límite de 5 imágenes alcanzado' : ''}>
                     <i className="bi bi-cloud-arrow-up display-4 text-muted mb-3"></i>
                     <h5 className="text-muted">Haz clic o arrastra imágenes aquí</h5>
                     <p className="text-muted mb-0">
-                      Formatos: JPEG, PNG, GIF, WebP • Máximo 5MB por imagen • Máximo 5 imágenes
+                      Formatos: JPEG, PNG, GIF, WebP • Máximo 5MB por imagen • Máximo {5 - imagenes.length} imágenes restantes
                     </p>
                   </div>
 
@@ -384,70 +377,118 @@ const PaginaNuevaPublicacion: React.FC = () => {
                     {imagenes.length}/5 imágenes seleccionadas
                   </div>
                 </div>
-
                 <div className="mb-4">
                   <label className="form-label fw-semibold">
                     <i className="bi bi-tags me-2"></i>
-                    Etiquetas (Opcional)
+                    Etiqueta (Opcional)
                   </label>
-                  
-                  {etiquetasDisponibles.length === 0 ? (
-                    <p className="text-muted">Cargando etiquetas...</p>
-                  ) : (
-                    <div className="d-flex flex-wrap gap-2">
-                      {etiquetasDisponibles.map((etiqueta) => (
-                        <button
-                          key={etiqueta.id}
-                          type="button"
-                          className={`btn btn-sm ${
-                            etiquetasSeleccionadas.includes(etiqueta.id) 
-                              ? 'btn-primary' 
-                              : 'btn-outline-primary'
-                          }`}
-                          onClick={() => manejarSeleccionEtiqueta(etiqueta.id)}
-                          disabled={cargando}
-                        >
-                          #{etiqueta.name}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  
-                  <div className="form-text mt-2">
-                    Selecciona las etiquetas que mejor describan tu publicación
+                  <div className="d-flex gap-2 mb-2">
+                    <input
+                      type="text"
+                      className="form-control form-control-sm"
+                      placeholder="Crear una etiqueta (ej: Unahur)"
+                      value={nuevoNombreEtiqueta}
+                      onChange={(e) => {
+                        setNuevoNombreEtiqueta(e.target.value);
+                        setMensajeBotonEtiqueta(''); // Limpia el mensaje al escribir
+                      }}
+                      // Deshabilitar si ya se agregó una o si se está cargando/creando
+                      disabled={creandoEtiqueta || cargando || etiquetasSeleccionadas.length > 0} 
+                    />
+                    <button
+                      type="button"
+                      // Cambia la clase a btn-success si está agregada
+                      className={`btn btn-sm ${mensajeBotonEtiqueta ? 'btn-success' : 'btn-outline-success'} text-nowrap`}
+                      onClick={async () => {
+                        const name = (nuevoNombreEtiqueta || '').trim();
+                        if (!name) return;
+
+                        setCreandoEtiqueta(true);
+                        setError(''); 
+
+                        try {
+                          
+                          const res = await fetch('http://localhost:3001/tags', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ name })
+                          });
+
+                          if (res && res.ok) {
+                            const tag = await res.json();
+                            
+                            // Seleccionar la nueva etiqueta
+                            setEtiquetasSeleccionadas([tag.id]);
+                            
+                            // Mostrar "Etiqueta agregada"
+                            setMensajeBotonEtiqueta('Etiqueta agregada');
+
+                            // Opcional: Limpiar el mensaje después de 3 segundos
+                            setTimeout(() => setMensajeBotonEtiqueta(''), 3000);
+
+                            console.log('Etiqueta creada y seleccionada:', tag);
+                          } else {
+                            const txt = res ? await res.text().catch(() => '') : '';
+                            console.warn('POST /tags falló:', res?.status, txt);
+                            setError('Error al crear la etiqueta: la solicitud al backend falló.');
+                          }
+
+                        } catch (error) {
+                          console.error('Error al crear la etiqueta:', error);
+                          setError('Error de red al crear la etiqueta.');
+                        } finally {
+                          setCreandoEtiqueta(false);
+                        }
+                      }}
+                      // Deshabilitar si está cargando, si el input está vacío o si ya se seleccionó una
+                      disabled={creandoEtiqueta || cargando || !nuevoNombreEtiqueta.trim() || etiquetasSeleccionadas.length > 0}
+                    >
+                      {creandoEtiqueta ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm me-1" role="status"></span>
+                          Creando...
+                        </>
+                      ) : (
+                        mensajeBotonEtiqueta || 'Agregar etiqueta'
+                      )}
+                    </button>
                   </div>
                   
+                  {/* Indicador de etiqueta seleccionada y botón de limpieza */}
                   {etiquetasSeleccionadas.length > 0 && (
-                    <div className="mt-2">
-                      <small className="text-muted">Etiquetas seleccionadas: </small>
-                      {etiquetasSeleccionadas.map(id => {
-                        const etiqueta = etiquetasDisponibles.find(t => t.id === id);
-                        return etiqueta ? (
-                          <span key={id} className="badge bg-primary me-1">
-                            #{etiqueta.name}
-                          </span>
-                        ) : null;
-                      })}
+                    <div className="alert alert-info alert-sm p-2 d-flex justify-content-between align-items-center">
+                        <i className="bi bi-tag-fill me-2"></i>
+                        Etiqueta **`{nuevoNombreEtiqueta}`** lista.
+                        <button 
+                          type="button"
+                          className="btn-close"
+                          aria-label="Eliminar etiqueta"
+                          onClick={() => { 
+                            setEtiquetasSeleccionadas([]);
+                            setNuevoNombreEtiqueta('');
+                            setMensajeBotonEtiqueta('');
+                          }}
+                        ></button>
                     </div>
                   )}
-                </div>
 
+                  <div className="form-text mt-2">
+                    Solo se permite agregar una etiqueta por publicación.
+                  </div>
+                </div>
                 <div className="d-flex gap-3 justify-content-end pt-3 border-top">
                   <button
                     type="button"
                     className="btn btn-outline-secondary"
                     onClick={() => navigate('/')}
-                    disabled={cargando}
-                  >
+                    disabled={cargando}>
                     <i className="bi bi-arrow-left me-2"></i>
                     Cancelar
                   </button>
-                  
                   <button
                     type="submit"
                     className="btn btn-primary px-4"
-                    disabled={cargando}
-                  >
+                    disabled={cargando}>
                     {cargando ? (
                       <>
                         <span className="spinner-border spinner-border-sm me-2" role="status"></span>
