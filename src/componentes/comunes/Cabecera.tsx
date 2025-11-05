@@ -47,7 +47,7 @@ const Cabecera: React.FC = () => {
           {/* Logo */}
           <Link to="/" className="navbar-brand fw-bold d-flex align-items-center" onClick={manejarNavegacion}>
             <div className="bg-white text-primary rounded-circle d-flex align-items-center justify-content-center me-2" 
-                 style={{width: '32px', height: '32px'}}>
+                style={{width: '32px', height: '32px'}}>
               <img src={logo} alt="Logo de la aplicación" 
                 style={{ 
                   width: '100%', 
@@ -93,7 +93,7 @@ const Cabecera: React.FC = () => {
                     style={{cursor: 'pointer'}}
                   >
                     <div className="bg-light rounded-circle me-2 d-flex align-items-center justify-content-center" 
-                         style={{width: '32px', height: '32px'}}>
+                        style={{width: '32px', height: '32px'}}>
                       <span className="text-dark">👤</span>
                     </div>
                     {usuario?.nickName}
@@ -147,7 +147,7 @@ const Cabecera: React.FC = () => {
                   {/* Info Usuario */}
                   <div className="d-flex align-items-center text-white mb-2 px-3">
                     <div className="bg-light rounded-circle d-flex align-items-center justify-content-center me-3" 
-                         style={{width: '40px', height: '40px'}}>
+                        style={{width: '40px', height: '40px'}}>
                       <span className="text-dark">👤</span>
                     </div>
                     <div>
@@ -206,25 +206,6 @@ const Cabecera: React.FC = () => {
       className="banner-img"
     />
 
-    {/* Botones opcionales si no está logueado */}
-    {!estaLogueado && (
-      <div className="banner-buttons text-center">
-        <Link
-          to="/registro"
-          className="btn btn-light btn-lg mx-2"
-          onClick={manejarNavegacion}
-        >
-          Comenzar Ahora
-        </Link>
-        <Link
-          to="/login"
-          className="btn btn-outline-light btn-lg mx-2"
-          onClick={manejarNavegacion}
-        >
-          Ingresar
-        </Link>
-      </div>
-    )}
   </div>
 )}
 
@@ -242,35 +223,34 @@ const Cabecera: React.FC = () => {
           display: block;
         }
         .banner-container {
-    position: relative;
-    width: 100%;
-    overflow: hidden;
-    background-color: #000;
-  }
-  .banner-img {
-    width: 100%;
-    max-height: 380px;
-    object-position: center 60%;
-    object-fit: cover;
-    display: block;
-  }
-  .banner-buttons {
-    position: absolute;
-    bottom: 20px;
-    left: 0;
-    right: 0;
-  }
-  @media (max-width: 768px) {
-    .banner-img {
-      max-height: 250px;
-    }
-    .banner-buttons .btn {
-      font-size: 1rem;
-      padding: 0.6rem 1.2rem;
-    }
-  }
-
-      `}</style>
+          position: relative;
+          width: 100%;
+          overflow: hidden;
+          background-color: #000;
+        }
+        .banner-img {
+          width: 100%;
+          max-height: 380px;
+          object-position: center 60%;
+          object-fit: cover;
+          display: block;
+        }
+        .banner-buttons {
+          position: absolute;
+          bottom: 20px;
+          left: 0;
+          right: 0;
+        }
+        @media (max-width: 768px) {
+          .banner-img {
+          max-height: 250px;
+        }
+        .banner-buttons .btn {
+          font-size: 1rem;
+          padding: 0.6rem 1.2rem;
+        }
+      }`}
+      </style>
     </>
   );
 };
