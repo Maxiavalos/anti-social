@@ -2,6 +2,17 @@ import React, { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ContextoUsuario } from '../contexto/ContextoUsuario';
 import { usuarioService } from '../servicios/api';
+import { 
+  PersonBadge, 
+  Envelope, 
+  ShieldLock, 
+  ShieldCheck, 
+  PersonPlus, 
+  BoxArrowInRight, 
+  ExclamationTriangle,
+  CheckCircle,
+  Rocket 
+} from 'react-bootstrap-icons';
 
 interface FormularioRegistro {
   nickName: string;
@@ -121,19 +132,19 @@ const PaginaRegistro: React.FC = () => {
 
   if (registroExitoso) {
     return (
-      <div className="container py-5">
+      <div className="container py-4 py-md-5">
         <div className="row justify-content-center">
-          <div className="col-md-6">
+          <div className="col-12 col-md-8 col-lg-6">
             <div className="card shadow-lg border-0">
-              <div className="card-body text-center p-5">
+              <div className="card-body text-center p-4 p-md-5">
                 <div className="text-success mb-4">
-                  <i className="bi bi-check-circle-fill display-1"></i>
+                  <CheckCircle size={64} />
                 </div>
-                <h2 className="text-success mb-3">¡Registro Exitoso!</h2>
+                <h2 className="text-success mb-3 h3">¡Registro Exitoso!</h2>
                 <p className="lead mb-4">
                   Tu cuenta <strong>@{formulario.nickName}</strong> ha sido creada correctamente.
                 </p>
-                <div className="spinner-border text-primary mb-3" role="status">
+                <div className="spinner-border text-success mb-3" role="status">
                   <span className="visually-hidden">Redirigiendo...</span>
                 </div>
                 <p className="text-muted">Redirigiendo a tu perfil...</p>
@@ -146,54 +157,55 @@ const PaginaRegistro: React.FC = () => {
   }
 
   return (
-    <div className="container py-5">
+    <div className="container py-4 py-md-5">
       <div className="row justify-content-center">
-        <div className="col-md-8 col-lg-6">
+        <div className="col-12 col-md-10 col-lg-8 col-xl-6">
           <div className="card shadow-lg border-0">
             <div className="card-header bg-success text-white text-center py-4">
-              <h2 className="mb-0">🚀 Crear Cuenta</h2>
+              <h2 className="h3 mb-0 d-flex align-items-center justify-content-center gap-2">
+                <Rocket size={24} />
+                Crear Cuenta
+              </h2>
             </div>
             
-            <div className="card-body p-4">
+            <div className="card-body p-3 p-md-4">
               {error && (
-                <div className="alert alert-danger d-flex align-items-center" role="alert">
-                  <i className="bi bi-exclamation-triangle me-2"></i>
-                  <div>{error}</div>
+                <div className="alert alert-danger d-flex align-items-center gap-2" role="alert">
+                  <ExclamationTriangle size={18} />
+                  <div className="small">{error}</div>
                 </div>
               )}
 
               <form onSubmit={manejarRegistro}>
                 <div className="mb-3">
-                  <label htmlFor="nickName" className="form-label fw-semibold">
-                    <i className="bi bi-person-badge me-2"></i>
-                    Elige tu Nickname
+                  <label htmlFor="nickName" className="form-label fw-semibold d-flex align-items-center gap-2">
+                    <PersonBadge size={18} />
+                    Usuario
                   </label>
                   <input
                     type="text"
-                    className="form-control form-control-lg"
+                    className="form-control"
                     id="nickName"
                     name="nickName"
                     value={formulario.nickName}
                     onChange={manejarCambio}
-                    placeholder="Ej: developer_2024"
+                    placeholder="Ingresa tu nombre de usuario"
                     required
                     disabled={cargando}
                     autoComplete="username"
                     minLength={3}
                   />
-                  <div className="form-text">
-                    Este será tu nombre de usuario en la plataforma (mínimo 3 caracteres)
-                  </div>
+                  
                 </div>
 
                 <div className="mb-3">
-                  <label htmlFor="email" className="form-label fw-semibold">
-                    <i className="bi bi-envelope me-2"></i>
+                  <label htmlFor="email" className="form-label fw-semibold d-flex align-items-center gap-2">
+                    <Envelope size={18} />
                     Email
                   </label>
                   <input
                     type="email"
-                    className="form-control form-control-lg"
+                    className="form-control"
                     id="email"
                     name="email"
                     value={formulario.email}
@@ -203,42 +215,38 @@ const PaginaRegistro: React.FC = () => {
                     disabled={cargando}
                     autoComplete="email"
                   />
-                  <div className="form-text">
-                    Usaremos este email para notificaciones importantes
-                  </div>
+                  
                 </div>
 
                 <div className="mb-3">
-                  <label htmlFor="password" className="form-label fw-semibold">
-                    <i className="bi bi-shield-lock me-2"></i>
+                  <label htmlFor="password" className="form-label fw-semibold d-flex align-items-center gap-2">
+                    <ShieldLock size={18} />
                     Contraseña
                   </label>
                   <input
                     type="password"
-                    className="form-control form-control-lg"
+                    className="form-control"
                     id="password"
                     name="password"
                     value={formulario.password}
                     onChange={manejarCambio}
-                    placeholder="Mínimo 6 caracteres"
+                    placeholder="Ingresa tu contraseña"
                     required
                     disabled={cargando}
                     autoComplete="new-password"
                     minLength={6}
                   />
-                  <div className="form-text">
-                    La contraseña debe tener al menos 6 caracteres
-                  </div>
+                  
                 </div>
 
                 <div className="mb-4">
-                  <label htmlFor="confirmarPassword" className="form-label fw-semibold">
-                    <i className="bi bi-shield-check me-2"></i>
+                  <label htmlFor="confirmarPassword" className="form-label fw-semibold d-flex align-items-center gap-2">
+                    <ShieldCheck size={18} />
                     Confirmar Contraseña
                   </label>
                   <input
                     type="password"
-                    className="form-control form-control-lg"
+                    className="form-control"
                     id="confirmarPassword"
                     name="confirmarPassword"
                     value={formulario.confirmarPassword}
@@ -248,34 +256,32 @@ const PaginaRegistro: React.FC = () => {
                     disabled={cargando}
                     autoComplete="new-password"
                   />
-                  <div className="form-text">
-                    Debe coincidir con la contraseña anterior
-                  </div>
+                 
                 </div>
 
                 <button 
                   type="submit" 
-                  className="btn btn-success btn-lg w-100 py-3"
+                  className="btn btn-success w-100 py-2 d-flex align-items-center justify-content-center gap-2"
                   disabled={cargando}
                 >
                   {cargando ? (
                     <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status"></span>
-                      Creando cuenta...
+                      <span className="spinner-border spinner-border-sm" role="status"></span>
+                      <span>Creando cuenta...</span>
                     </>
                   ) : (
                     <>
-                      <i className="bi bi-person-plus me-2"></i>
-                      Crear mi cuenta
+                      <PersonPlus size={18} />
+                      <span>Crear mi cuenta</span>
                     </>
                   )}
                 </button>
               </form>
 
-              <div className="text-center mt-4">
-                <p className="text-muted mb-2">¿Ya tienes una cuenta?</p>
-                <Link to="/login" className="btn btn-outline-secondary">
-                  <i className="bi bi-box-arrow-in-right me-2"></i>
+              <div className="text-center mt-4 pt-3 border-top">
+                <p className="text-muted mb-3">¿Ya tienes una cuenta?</p>
+                <Link to="/login" className="btn btn-outline-success d-flex align-items-center gap-2 mx-auto" style={{width: 'fit-content'}}>
+                  <BoxArrowInRight size={16} />
                   Ir al Login
                 </Link>
               </div>

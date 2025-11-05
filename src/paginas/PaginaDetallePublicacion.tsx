@@ -11,6 +11,7 @@ import {
   type ComentarioAPI,
   type ImagenAPI 
 } from '../servicios/api';
+import { ArrowLeft, PersonCircle, Chat, HandThumbsUp, Clock } from 'react-bootstrap-icons';
 
 interface Publicacion {
   id: number;
@@ -80,8 +81,8 @@ const PaginaDetallePublicacion: React.FC = () => {
         minute: '2-digit'
       }),
       comentariosCount: comentariosCount,
-      meGustaCount: datosLikes.meGustaCount, // ← DATOS REALES DE LA API
-      userLiked: datosLikes.userLiked, // ← DATOS REALES DE LA API
+      meGustaCount: datosLikes.meGustaCount,
+      userLiked: datosLikes.userLiked,
       etiquetas: publicacionAPI.Tags ? publicacionAPI.Tags.map(tag => tag.name) : []
     };
   };
@@ -192,19 +193,14 @@ const PaginaDetallePublicacion: React.FC = () => {
     }
 
     try {
-      // Llamar al servicio real de likes
       const response = await likeService.toggleLike(publicacionId, usuario.id);
-      
-      // RECARGAR LOS DATOS REALES DESDE LA API después del like
       await recargarPublicacion();
-      
     } catch (error: any) {
       console.error('Error al procesar like:', error);
       setError('No se pudo procesar el me gusta: ' + error.message);
     }
   };
 
-  // Para mantener compatibilidad con TarjetaPublicacion
   const manejarMeGusta = (publicacionId: number) => {
     manejarToggleLike(publicacionId);
   };
@@ -226,7 +222,6 @@ const PaginaDetallePublicacion: React.FC = () => {
     try {
       console.log('Enviando comentario para publicación:', publicacion.id);
       
-      // Crear comentario en la API
       const comentarioCreado = await comentarioService.crearComentario({
         content: nuevoComentario.trim(),
         userId: usuario.id,
@@ -235,7 +230,6 @@ const PaginaDetallePublicacion: React.FC = () => {
 
       console.log('Comentario creado en API:', comentarioCreado);
 
-      // Transformar y agregar el nuevo comentario a la lista
       const nuevoCom: Comentario = {
         id: comentarioCreado.id,
         usuario: usuario.nickName,
@@ -245,11 +239,9 @@ const PaginaDetallePublicacion: React.FC = () => {
         userId: usuario.id
       };
 
-      // Agregar el nuevo comentario al inicio de la lista
       setComentarios(prev => [nuevoCom, ...prev]);
       setNuevoComentario('');
       
-      // Actualizar contador de comentarios en la publicación
       setPublicacion(prev => prev ? {
         ...prev,
         comentariosCount: prev.comentariosCount + 1
@@ -265,7 +257,7 @@ const PaginaDetallePublicacion: React.FC = () => {
     return (
       <div className="container py-4">
         <div className="text-center py-5">
-          <div className="spinner-border text-primary mb-3" role="status">
+          <div className="spinner-border text-success mb-3" role="status">
             <span className="visually-hidden">Cargando...</span>
           </div>
           <p className="text-muted">Cargando publicación...</p>
@@ -280,32 +272,33 @@ const PaginaDetallePublicacion: React.FC = () => {
         <div className="alert alert-danger text-center">
           <h4>Publicación no encontrada</h4>
           <p>{error || 'La publicación que buscas no existe o ha sido eliminada.'}</p>
-          <Link to="/" className="btn btn-primary">Volver al Inicio</Link>
+          <Link to="/" className="btn btn-success">Volver al Inicio</Link>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container py-4">
+    <div className="container py-3 py-md-4">
       {/* Botón volver */}
-      <div className="mb-4">
+      <div className="mb-3 mb-md-4">
         <button 
           onClick={() => navigate(-1)}
-          className="btn btn-outline-secondary"
+          className="btn btn-outline-success d-flex align-items-center gap-2"
         >
-          ← Volver
+          <ArrowLeft size={16} />
+          Volver
         </button>
       </div>
 
       {error && (
-        <div className="alert alert-danger mb-4">
+        <div className="alert alert-danger mb-3 mb-md-4">
           {error}
         </div>
       )}
 
       <div className="row justify-content-center">
-        <div className="col-lg-8">
+        <div className="col-12 col-lg-8">
           {/* Publicación principal */}
           <TarjetaPublicacion
             publicacion={publicacion}
@@ -316,8 +309,11 @@ const PaginaDetallePublicacion: React.FC = () => {
 
           {/* Sección de comentarios */}
           <div className="card shadow-sm border-0">
-            <div className="card-header bg-light">
-              <h5 className="mb-0">💬 Comentarios ({comentarios.length})</h5>
+            <div className="card-header bg-success bg-opacity-10 border-0">
+              <h5 className="mb-0 d-flex align-items-center gap-2 text-success">
+                <Chat size={18} />
+                Comentarios ({comentarios.length})
+              </h5>
             </div>
             
             {/* Formulario de nuevo comentario */}
@@ -336,9 +332,10 @@ const PaginaDetallePublicacion: React.FC = () => {
                   <div className="d-flex justify-content-end">
                     <button 
                       type="submit" 
-                      className="btn btn-primary"
+                      className="btn btn-success d-flex align-items-center gap-2"
                       disabled={!nuevoComentario.trim()}
                     >
+                      <Chat size={14} />
                       Comentar
                     </button>
                   </div>
@@ -347,7 +344,7 @@ const PaginaDetallePublicacion: React.FC = () => {
             )}
 
             {/* Lista de comentarios */}
-            <div className="card-body">
+            <div className="card-body p-3 p-md-4">
               {comentarios.length === 0 ? (
                 <p className="text-muted text-center py-3">
                   {usuario ? 'No hay comentarios aún. ¡Sé el primero en comentar!' : 'Inicia sesión para comentar'}
@@ -361,27 +358,31 @@ const PaginaDetallePublicacion: React.FC = () => {
                           to={`/perfil/${comentario.usuario}`}
                           className="text-decoration-none"
                         >
-                          <div className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" 
+                          <div className="bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-3" 
                               style={{width: '35px', height: '35px', fontSize: '14px'}}>
-                            {comentario.usuario.charAt(0).toUpperCase()}
+                            <PersonCircle size={16} />
                           </div>
                         </Link>
                         <div className="flex-grow-1">
-                          <div className="d-flex justify-content-between align-items-start">
-                            <div>
+                          <div className="d-flex justify-content-between align-items-start flex-column flex-sm-row">
+                            <div className="mb-1 mb-sm-0">
                               <Link 
                                 to={`/perfil/${comentario.usuario}`}
                                 className="text-decoration-none"
                               >
                                 <h6 className="mb-0 fw-bold text-dark">@{comentario.usuario}</h6>
                               </Link>
-                              <small className="text-muted">{comentario.fechaCreacion}</small>
+                              <small className="text-muted d-flex align-items-center gap-1">
+                                <Clock size={12} />
+                                {comentario.fechaCreacion}
+                              </small>
                             </div>
                             <button 
-                              className="btn btn-outline-primary btn-sm"
+                              className="btn btn-outline-success btn-sm d-flex align-items-center gap-1 mt-1 mt-sm-0"
                               onClick={() => manejarMeGustaComentario(comentario.id)}
                             >
-                              👍 {comentario.meGustaCount}
+                              <HandThumbsUp size={12} />
+                              {comentario.meGustaCount}
                             </button>
                           </div>
                           <p className="mt-2 mb-0" style={{ whiteSpace: 'pre-wrap' }}>

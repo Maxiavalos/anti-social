@@ -1,8 +1,8 @@
-
 import React, { useState, useContext, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ContextoUsuario } from '../contexto/ContextoUsuario';
 import { publicacionService, imagenService, etiquetaService, uploadService, type EtiquetaAPI } from '../servicios/api';
+import { Pencil, Image, Tag, CloudArrowUp, X, PlusCircle, Send, ArrowLeft, CheckCircle, ExclamationTriangle, ChatText } from 'react-bootstrap-icons';
 
 interface ImagenPreview {
   file: File;
@@ -81,9 +81,7 @@ const PaginaNuevaPublicacion: React.FC = () => {
 
   // Eliminar imagen
   const manejarEliminarImagen = (index: number) => {
-    // Revocar URL del objeto para liberar memoria
     URL.revokeObjectURL(imagenes[index].previewUrl);
-    
     const nuevasImagenes = imagenes.filter((_, i) => i !== index);
     setImagenes(nuevasImagenes);
   };
@@ -106,7 +104,7 @@ const PaginaNuevaPublicacion: React.FC = () => {
     }
   };
 
-  // función principal para enviar la publicación (crea tag pendiente si hubiera)
+  
   const manejarEnviar = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     setCargando(true);
@@ -129,12 +127,12 @@ const PaginaNuevaPublicacion: React.FC = () => {
         setCargando(false);
         return;
       }
+
       console.log('Creando publicación...');
       const nameNuevo = (nuevoNombreEtiqueta || '').trim();
       if (nameNuevo && etiquetasSeleccionadas.length === 0) {
         setCreandoEtiqueta(true);
         try {
-          
           const resTag = await fetch('http://localhost:3001/tags', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -143,13 +141,11 @@ const PaginaNuevaPublicacion: React.FC = () => {
 
           if (resTag && resTag.ok) {
             const tagCreado = await resTag.json();
-            
             setEtiquetasSeleccionadas([tagCreado.id]);
             console.log('Etiqueta creada automáticamente y seleccionada al enviar:', tagCreado);
           } else {
             const texto = resTag ? await resTag.text().catch(() => '') : '';
             console.warn('No se pudo crear la etiqueta nueva al enviar. Respuesta:', resTag?.status, texto);
-            
             setError('Advertencia: No se pudo crear la nueva etiqueta. Continuar sin ella.');
           }
         } catch (err) {
@@ -160,30 +156,23 @@ const PaginaNuevaPublicacion: React.FC = () => {
         }
       }
 
-      
       const payload = {
         description: descripcion.trim(),
         userId: usuario.id,
-        
         tagIds: etiquetasSeleccionadas.length > 0 ? etiquetasSeleccionadas : undefined
       };
 
       const publicacionCreada = await publicacionService.crearPublicacion(payload);
       console.log('Publicación creada:', publicacionCreada);
 
-      
       if (imagenes.length > 0) {
         console.log('Subiendo imágenes...');
-        
-        
         const promesasImagenes = imagenes.map(async (imagen) => {
           const imageUrl = await subirImagen(imagen);
-
           await imagenService.crearImagen({
             url: imageUrl,
             postId: publicacionCreada.id
           });
-
           return imageUrl;
         });
 
@@ -193,7 +182,6 @@ const PaginaNuevaPublicacion: React.FC = () => {
       setEnviado(true);
       imagenes.forEach(imagen => URL.revokeObjectURL(imagen.previewUrl));
 
-      // Redirigir después de 2 segundos
       setTimeout(() => {
         navigate('/perfil');
       }, 2000);
@@ -229,7 +217,7 @@ const PaginaNuevaPublicacion: React.FC = () => {
         <div className="row justify-content-center">
           <div className="col-md-6">
             <div className="alert alert-success text-center">
-              <i className="bi bi-check-circle display-4 text-success mb-3"></i>
+              <CheckCircle size={48} className="text-success mb-3" />
               <h3>¡Publicación creada exitosamente!</h3>
               <p className="mb-0">Redirigiendo a tu perfil...</p>
             </div>
@@ -240,40 +228,43 @@ const PaginaNuevaPublicacion: React.FC = () => {
   }
 
   return (
-    <div className="container py-4">
+    <div className="container py-3 py-md-4">
       <div className="row justify-content-center">
-        <div className="col-lg-8">
-          <div className="text-center mb-5">
-            <h1 className="h2 mb-3">📝 Crear Nueva Publicación</h1>
+        <div className="col-12 col-lg-8">
+          <div className="text-center mb-4 mb-md-5">
+            <h1 className="h3 h2-md mb-3 d-flex align-items-center justify-content-center gap-2">
+              <Pencil size={28} />
+              Crear Nueva Publicación
+            </h1>
             <p className="text-muted">
               Comparte tus pensamientos, ideas o proyectos con la comunidad
             </p>
           </div>
 
           <div className="card shadow-lg border-0">
-            <div className="card-header bg-primary text-white py-3">
-              <h3 className="h5 mb-0">
-                <i className="bi bi-pencil-square me-2"></i>
+            <div className="card-header bg-success text-white py-3">
+              <h3 className="h5 mb-0 d-flex align-items-center gap-2">
+                <Pencil size={20} />
                 Nueva Publicación
               </h3>
             </div>
             
-            <div className="card-body p-4">
+            <div className="card-body p-3 p-md-4">
               {error && (
-                <div className="alert alert-danger d-flex align-items-center" role="alert">
-                  <i className="bi bi-exclamation-triangle me-2"></i>
+                <div className="alert alert-danger d-flex align-items-center gap-2" role="alert">
+                  <ExclamationTriangle size={20} />
                   <div>{error}</div>
                 </div>
               )}
 
               <form onSubmit={manejarEnviar}>
                 <div className="mb-4">
-                  <label htmlFor="descripcion" className="form-label fw-semibold">
-                    <i className="bi bi-chat-text me-2"></i>
+                  <label htmlFor="descripcion" className="form-label fw-semibold d-flex align-items-center gap-2">
+                    <ChatText size={18} />
                     Descripción <span className="text-danger">*</span>
                   </label>
                   <textarea
-                    className="form-control form-control-lg"
+                    className="form-control"
                     id="descripcion"
                     rows={5}
                     value={descripcion}
@@ -288,29 +279,27 @@ const PaginaNuevaPublicacion: React.FC = () => {
                 </div>
 
                 <div className="mb-4">
-                  <label className="form-label fw-semibold">
-                    <i className="bi bi-image me-2"></i>
+                  <label className="form-label fw-semibold d-flex align-items-center gap-2">
+                    <Image size={18} />
                     Imágenes (Opcional)
                   </label>
                   
-                  {/* Área de drag and drop */}
+                  
                   <div 
-                    className="border border-dashed border-secondary rounded-3 p-5 text-center mb-3 bg-light"
+                    className="border border-dashed border-secondary rounded-3 p-4 p-md-5 text-center mb-3 bg-light"
                     onDragOver={manejarDragOver}
                     onDrop={manejarDrop}
-                    style={{ cursor: 'pointer' }}
-                    onClick={abrirSelectorArchivos}
-                    // Deshabilitar si ya se alcanzó el límite
-                    data-bs-toggle={imagenes.length >= 5 ? 'tooltip' : ''}
+                    style={{ cursor: imagenes.length >= 5 ? 'not-allowed' : 'pointer' }}
+                    onClick={imagenes.length >= 5 ? undefined : abrirSelectorArchivos}
                     title={imagenes.length >= 5 ? 'Límite de 5 imágenes alcanzado' : ''}>
-                    <i className="bi bi-cloud-arrow-up display-4 text-muted mb-3"></i>
+                    <CloudArrowUp size={48} className="text-muted mb-3" />
                     <h5 className="text-muted">Haz clic o arrastra imágenes aquí</h5>
-                    <p className="text-muted mb-0">
+                    <p className="text-muted mb-0 small">
                       Formatos: JPEG, PNG, GIF, WebP • Máximo 5MB por imagen • Máximo {5 - imagenes.length} imágenes restantes
                     </p>
                   </div>
 
-                  {/* Input oculto para seleccionar archivos */}
+                  {/* Input para seleccionar archivos */}
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -326,11 +315,11 @@ const PaginaNuevaPublicacion: React.FC = () => {
                     <div className="text-center mb-3">
                       <button
                         type="button"
-                        className="btn btn-outline-primary"
+                        className="btn btn-outline-success d-flex align-items-center gap-2 mx-auto"
                         onClick={abrirSelectorArchivos}
                         disabled={cargando}
                       >
-                        <i className="bi bi-plus-circle me-2"></i>
+                        <PlusCircle size={16} />
                         Agregar más imágenes
                       </button>
                     </div>
@@ -338,26 +327,27 @@ const PaginaNuevaPublicacion: React.FC = () => {
 
                   {/* Previews de imágenes */}
                   {imagenes.length > 0 && (
-                    <div className="row g-3 mb-3">
+                    <div className="row g-2 g-md-3 mb-3">
                       {imagenes.map((imagen, index) => (
-                        <div key={index} className="col-6 col-md-4">
-                          <div className="card position-relative">
+                        <div key={index} className="col-6 col-sm-4 col-md-3">
+                          <div className="card position-relative border-0 shadow-sm">
                             <img 
                               src={imagen.previewUrl} 
                               alt={`Preview ${index + 1}`}
-                              className="card-img-top"
-                              style={{ height: '120px', objectFit: 'cover' }}
+                              className="card-img-top w-100"
+                              style={{ height: '100px', objectFit: 'cover' }}
                             />
                             <button
                               type="button"
-                              className="btn btn-danger btn-sm position-absolute top-0 end-0 m-1"
+                              className="btn btn-danger btn-sm position-absolute top-0 end-0 m-1 rounded-circle"
+                              style={{ width: '30px', height: '30px', padding: 0 }}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 manejarEliminarImagen(index);
                               }}
                               disabled={cargando}
                             >
-                              <i className="bi bi-x"></i>
+                              <X size={14} />
                             </button>
                             <div className="card-body p-2">
                               <small className="text-muted d-block text-truncate">
@@ -377,37 +367,35 @@ const PaginaNuevaPublicacion: React.FC = () => {
                     {imagenes.length}/5 imágenes seleccionadas
                   </div>
                 </div>
+
                 <div className="mb-4">
-                  <label className="form-label fw-semibold">
-                    <i className="bi bi-tags me-2"></i>
+                  <label className="form-label fw-semibold d-flex align-items-center gap-2">
+                    <Tag size={18} />
                     Etiqueta (Opcional)
                   </label>
-                  <div className="d-flex gap-2 mb-2">
+                  <div className="d-flex flex-column flex-sm-row gap-2 mb-2">
                     <input
                       type="text"
-                      className="form-control form-control-sm"
+                      className="form-control"
                       placeholder="Crear una etiqueta (ej: Unahur)"
                       value={nuevoNombreEtiqueta}
                       onChange={(e) => {
                         setNuevoNombreEtiqueta(e.target.value);
-                        setMensajeBotonEtiqueta(''); // Limpia el mensaje al escribir
+                        setMensajeBotonEtiqueta('');
                       }}
-                      // Deshabilitar si ya se agregó una o si se está cargando/creando
-                      disabled={creandoEtiqueta || cargando || etiquetasSeleccionadas.length > 0} 
+                      disabled={creandoEtiqueta || cargando || etiquetasSeleccionadas.length > 0}
                     />
                     <button
                       type="button"
-                      // Cambia la clase a btn-success si está agregada
-                      className={`btn btn-sm ${mensajeBotonEtiqueta ? 'btn-success' : 'btn-outline-success'} text-nowrap`}
+                      className={`btn ${mensajeBotonEtiqueta ? 'btn-success' : 'btn-outline-success'} text-nowrap flex-shrink-0`}
                       onClick={async () => {
                         const name = (nuevoNombreEtiqueta || '').trim();
                         if (!name) return;
 
                         setCreandoEtiqueta(true);
-                        setError(''); 
+                        setError('');
 
                         try {
-                          
                           const res = await fetch('http://localhost:3001/tags', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
@@ -416,23 +404,15 @@ const PaginaNuevaPublicacion: React.FC = () => {
 
                           if (res && res.ok) {
                             const tag = await res.json();
-                            
-                            // Seleccionar la nueva etiqueta
                             setEtiquetasSeleccionadas([tag.id]);
-                            
-                            // Mostrar "Etiqueta agregada"
                             setMensajeBotonEtiqueta('Etiqueta agregada');
-
-                            // Opcional: Limpiar el mensaje después de 3 segundos
                             setTimeout(() => setMensajeBotonEtiqueta(''), 3000);
-
                             console.log('Etiqueta creada y seleccionada:', tag);
                           } else {
                             const txt = res ? await res.text().catch(() => '') : '';
                             console.warn('POST /tags falló:', res?.status, txt);
                             setError('Error al crear la etiqueta: la solicitud al backend falló.');
                           }
-
                         } catch (error) {
                           console.error('Error al crear la etiqueta:', error);
                           setError('Error de red al crear la etiqueta.');
@@ -440,7 +420,6 @@ const PaginaNuevaPublicacion: React.FC = () => {
                           setCreandoEtiqueta(false);
                         }
                       }}
-                      // Deshabilitar si está cargando, si el input está vacío o si ya se seleccionó una
                       disabled={creandoEtiqueta || cargando || !nuevoNombreEtiqueta.trim() || etiquetasSeleccionadas.length > 0}
                     >
                       {creandoEtiqueta ? (
@@ -454,21 +433,23 @@ const PaginaNuevaPublicacion: React.FC = () => {
                     </button>
                   </div>
                   
-                  {/* Indicador de etiqueta seleccionada y botón de limpieza */}
+                  {/* Indicador de etiqueta seleccionada */}
                   {etiquetasSeleccionadas.length > 0 && (
-                    <div className="alert alert-info alert-sm p-2 d-flex justify-content-between align-items-center">
-                        <i className="bi bi-tag-fill me-2"></i>
-                        Etiqueta **`{nuevoNombreEtiqueta}`** lista.
-                        <button 
-                          type="button"
-                          className="btn-close"
-                          aria-label="Eliminar etiqueta"
-                          onClick={() => { 
-                            setEtiquetasSeleccionadas([]);
-                            setNuevoNombreEtiqueta('');
-                            setMensajeBotonEtiqueta('');
-                          }}
-                        ></button>
+                    <div className="alert alert-success alert-sm p-2 d-flex justify-content-between align-items-center">
+                      <div className="d-flex align-items-center gap-2">
+                        <Tag size={16} />
+                        Etiqueta <strong>"{nuevoNombreEtiqueta}"</strong> lista.
+                      </div>
+                      <button 
+                        type="button"
+                        className="btn-close"
+                        aria-label="Eliminar etiqueta"
+                        onClick={() => { 
+                          setEtiquetasSeleccionadas([]);
+                          setNuevoNombreEtiqueta('');
+                          setMensajeBotonEtiqueta('');
+                        }}
+                      ></button>
                     </div>
                   )}
 
@@ -476,27 +457,28 @@ const PaginaNuevaPublicacion: React.FC = () => {
                     Solo se permite agregar una etiqueta por publicación.
                   </div>
                 </div>
-                <div className="d-flex gap-3 justify-content-end pt-3 border-top">
+
+                <div className="d-flex flex-column flex-sm-row gap-2 gap-sm-3 justify-content-end pt-3 border-top">
                   <button
                     type="button"
-                    className="btn btn-outline-secondary"
+                    className="btn btn-outline-secondary d-flex align-items-center gap-2 order-2 order-sm-1"
                     onClick={() => navigate('/')}
                     disabled={cargando}>
-                    <i className="bi bi-arrow-left me-2"></i>
+                    <ArrowLeft size={16} />
                     Cancelar
                   </button>
                   <button
                     type="submit"
-                    className="btn btn-primary px-4"
+                    className="btn btn-success px-4 d-flex align-items-center gap-2 order-1 order-sm-2"
                     disabled={cargando}>
                     {cargando ? (
                       <>
-                        <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                        <span className="spinner-border spinner-border-sm" role="status"></span>
                         Creando publicación...
                       </>
                     ) : (
                       <>
-                        <i className="bi bi-send me-2"></i>
+                        <Send size={16} />
                         Publicar
                       </>
                     )}

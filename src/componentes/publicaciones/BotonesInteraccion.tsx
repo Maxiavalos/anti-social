@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { HandThumbsUp, HandThumbsDown, Chat, ArrowRight } from 'react-bootstrap-icons';
 
 interface BotonesInteraccionProps {
   publicacionId: number;
@@ -21,26 +22,28 @@ const BotonesInteraccion: React.FC<BotonesInteraccionProps> = ({
   return (
     <div className="d-flex justify-content-between align-items-center border-top pt-3">
       {/* Botones de interacción */}
-      <div className="d-flex gap-3">
+      <div className="d-flex gap-2 gap-sm-3 flex-wrap">
         <button 
-          className="btn btn-outline-primary btn-sm"
+          className="btn btn-outline-success btn-sm d-flex align-items-center gap-1"
           onClick={() => onMeGusta(publicacionId)}
         >
-          👍 {meGustaCount}
+          <HandThumbsUp size={14} />
+          <span>{meGustaCount}</span>
         </button>
         <button 
-          className="btn btn-outline-secondary btn-sm"
+          className="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1"
           onClick={() => onNoMeGusta(publicacionId)}
         >
-          👎
+          <HandThumbsDown size={14} />
         </button>
         
-           {!esDetalle && (
+        {!esDetalle && (
           <Link 
             to={`/publicacion/${publicacionId}`}
-            className="btn btn-outline-info btn-sm"
+            className="btn btn-outline-success btn-sm d-flex align-items-center gap-1"
           >
-            💬 {comentariosCount}
+            <Chat size={14} />
+            <span>{comentariosCount}</span>
           </Link>
         )}
       </div>
@@ -49,9 +52,10 @@ const BotonesInteraccion: React.FC<BotonesInteraccionProps> = ({
       {!esDetalle && (
         <Link 
           to={`/publicacion/${publicacionId}`}
-          className="btn btn-primary btn-sm"
+          className="btn btn-success btn-sm d-flex align-items-center gap-1 ms-2"
         >
-          Ver Más
+          <span>Ver Más</span>
+          <ArrowRight size={14} />
         </Link>
       )}
     </div>

@@ -2,6 +2,7 @@ import React, { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ContextoUsuario } from '../contexto/ContextoUsuario';
 import { usuarioService } from '../servicios/api';
+import { Person, Lock, InfoCircle, BoxArrowInRight, PersonPlus, ExclamationTriangle } from 'react-bootstrap-icons';
 
 const PaginaLogin: React.FC = () => {
   const [nickName, setNickName] = useState<string>('');
@@ -18,21 +19,18 @@ const PaginaLogin: React.FC = () => {
     setError('');
 
     try {
-      // Validar campos requeridos
       if (!nickName.trim()) {
         setError('El nickname es requerido');
         setCargando(false);
         return;
       }
 
-      // Validar contraseña fija "123456" según el TP
       if (password !== '123456') {
-        setError('Contraseña incorrecta. Usa "123456"');
+        setError('Contraseña incorrecta."');
         setCargando(false);
         return;
       }
 
-      // Buscar usuario en la API
       const usuarios = await usuarioService.obtenerUsuarios();
       const usuarioEncontrado = usuarios.find((u: any) => 
         u.nickName && u.nickName.toLowerCase() === nickName.toLowerCase().trim()
@@ -44,10 +42,8 @@ const PaginaLogin: React.FC = () => {
         return;
       }
 
-      // Iniciar sesión con el usuario encontrado
       iniciarSesion(usuarioEncontrado);
       
-      // Navegar al perfil
       setTimeout(() => {
         navigate('/perfil');
       }, 500);
@@ -71,35 +67,38 @@ const PaginaLogin: React.FC = () => {
   };
 
   return (
-    <div className="container py-5">
+    <div className="container py-4 py-md-5">
       <div className="row justify-content-center">
-        <div className="col-md-6 col-lg-5">
+        <div className="col-12 col-md-8 col-lg-6 col-xl-5">
           <div className="card shadow-lg border-0">
-            <div className="card-header bg-primary text-white text-center py-4">
-              <h2 className="mb-0">🔑 Iniciar Sesión</h2>
+            <div className="card-header bg-success text-white text-center py-4">
+              <h2 className="h3 mb-0 d-flex align-items-center justify-content-center gap-2">
+                <Lock size={24} />
+                Iniciar Sesión
+              </h2>
             </div>
             
-            <div className="card-body p-4">
+            <div className="card-body p-3 p-md-4">
               {error && (
-                <div className="alert alert-danger d-flex align-items-center" role="alert">
-                  <i className="bi bi-exclamation-triangle me-2"></i>
-                  <div>{error}</div>
+                <div className="alert alert-danger d-flex align-items-center gap-2" role="alert">
+                  <ExclamationTriangle size={18} />
+                  <div className="small">{error}</div>
                 </div>
               )}
 
               <form onSubmit={manejarLogin}>
                 <div className="mb-3">
-                  <label htmlFor="nickName" className="form-label fw-semibold">
-                    <i className="bi bi-person me-2"></i>
-                    Nickname
+                  <label htmlFor="nickName" className="form-label fw-semibold d-flex align-items-center gap-2">
+                    <Person size={18} />
+                    Usuario
                   </label>
                   <input
                     type="text"
-                    className="form-control form-control-lg"
+                    className="form-control"
                     id="nickName"
                     value={nickName}
                     onChange={manejarCambioNickName}
-                    placeholder="Ingresa tu nickname"
+                    placeholder="Ingresa tu usuario"
                     required
                     disabled={cargando}
                     autoComplete="username"
@@ -107,50 +106,47 @@ const PaginaLogin: React.FC = () => {
                 </div>
 
                 <div className="mb-4">
-                  <label htmlFor="password" className="form-label fw-semibold">
-                    <i className="bi bi-lock me-2"></i>
+                  <label htmlFor="password" className="form-label fw-semibold d-flex align-items-center gap-2">
+                    <Lock size={18} />
                     Contraseña
                   </label>
                   <input
                     type="password"
-                    className="form-control form-control-lg"
+                    className="form-control"
                     id="password"
                     value={password}
                     onChange={manejarCambioPassword}
-                    placeholder="Usa 123456 para prueba"
+                    placeholder="Ingresa tu contraseña"
                     required
                     disabled={cargando}
                     autoComplete="current-password"
                   />
-                  <div className="form-text text-muted">
-                    <i className="bi bi-info-circle me-1"></i>
-                    Contraseña de prueba: <strong>123456</strong>
-                  </div>
+        
                 </div>
 
                 <button 
                   type="submit" 
-                  className="btn btn-primary btn-lg w-100 py-3"
+                  className="btn btn-success w-100 py-2 d-flex align-items-center justify-content-center gap-2"
                   disabled={cargando}
                 >
                   {cargando ? (
                     <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status"></span>
-                      Verificando usuario...
+                      <span className="spinner-border spinner-border-sm" role="status"></span>
+                      <span>Verificando usuario...</span>
                     </>
                   ) : (
                     <>
-                      <i className="bi bi-box-arrow-in-right me-2"></i>
-                      Ingresar a la plataforma
+                      <BoxArrowInRight size={18} />
+                      <span>Ingresar a la plataforma</span>
                     </>
                   )}
                 </button>
               </form>
 
-              <div className="text-center mt-4">
-                <p className="text-muted mb-2">¿No tienes una cuenta?</p>
-                <Link to="/registro" className="btn btn-outline-primary">
-                  <i className="bi bi-person-plus me-2"></i>
+              <div className="text-center mt-4 pt-3 border-top">
+                <p className="text-muted mb-3">¿No tienes una cuenta?</p>
+                <Link to="/registro" className="btn btn-outline-success d-flex align-items-center gap-2 mx-auto" style={{width: 'fit-content'}}>
+                  <PersonPlus size={16} />
                   Crear cuenta nueva
                 </Link>
               </div>

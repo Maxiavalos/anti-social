@@ -1,6 +1,7 @@
 import React, { useContext, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { ContextoUsuario } from "../../contexto/ContextoUsuario";
+import { Person, Pencil, House, BoxArrowRight, PersonCircle } from 'react-bootstrap-icons';
 import logo from '../../assets/logo.png';
 import banner from '../../assets/banner.png';
 
@@ -54,7 +55,7 @@ const Cabecera: React.FC = () => {
                   height: '100%', 
                   objectFit: 'cover',
                   borderRadius: '50%'
-            }}/>
+                }}/>
             </div>
             UnaHur Anti-Social
           </Link>
@@ -64,6 +65,7 @@ const Cabecera: React.FC = () => {
             className="navbar-toggler d-lg-none border-0" 
             type="button" 
             onClick={toggleMenu}
+            style={{ color: '#198754' }}
           >
             <span className="navbar-toggler-icon"></span>
           </button>
@@ -73,7 +75,7 @@ const Cabecera: React.FC = () => {
             <ul className="navbar-nav me-auto">
               <li className="nav-item">
                 <Link to="/" className={`nav-link ${esPaginaActiva("/")}`} onClick={manejarNavegacion}>
-                  🏠 Inicio
+                  <House className="me-1" /> Inicio
                 </Link>
               </li>
             </ul>
@@ -82,8 +84,8 @@ const Cabecera: React.FC = () => {
             {estaLogueado ? (
               <div className="navbar-nav align-items-center">
                 <li className="nav-item">
-                  <Link to="/nueva-publicacion" className="btn btn-warning btn-sm me-2" onClick={manejarNavegacion}>
-                    📝 Crear Post
+                  <Link to="/nueva-publicacion" className="btn btn-success btn-sm me-2" onClick={manejarNavegacion}>
+                    <Pencil className="me-1" /> Crear Post
                   </Link>
                 </li>
                 <li className="nav-item dropdown">
@@ -94,7 +96,7 @@ const Cabecera: React.FC = () => {
                   >
                     <div className="bg-light rounded-circle me-2 d-flex align-items-center justify-content-center" 
                         style={{width: '32px', height: '32px'}}>
-                      <span className="text-dark">👤</span>
+                      <Person className="text-dark" />
                     </div>
                     {usuario?.nickName}
                   </a>
@@ -105,7 +107,7 @@ const Cabecera: React.FC = () => {
                         className="dropdown-item" 
                         onClick={manejarNavegacion}
                       >
-                        👤 Mi Perfil
+                        <PersonCircle className="me-1" /> Mi Perfil
                       </Link>
                     </li>
                     <li><hr className="dropdown-divider" /></li>
@@ -114,7 +116,7 @@ const Cabecera: React.FC = () => {
                         onClick={handleCerrarSesion} 
                         className="dropdown-item text-danger"
                       >
-                        🚪 Cerrar Sesión
+                        <BoxArrowRight className="me-1" /> Cerrar Sesión
                       </button>
                     </li>
                   </ul>
@@ -125,11 +127,11 @@ const Cabecera: React.FC = () => {
               <div className="navbar-nav">
                 <li className="nav-item">
                   <Link to="/login" className={`nav-link ${esPaginaActiva("/login")}`} onClick={manejarNavegacion}>
-                    🔑 Ingresar
+                    <Person className="me-1" /> Ingresar
                   </Link>
                 </li>
                 <li className="nav-item">
-                  <Link to="/registro" className={`btn btn-primary btn-sm ms-2 ${esPaginaActiva("/registro")}`} onClick={manejarNavegacion}>
+                  <Link to="/registro" className={`btn btn-success btn-sm ms-2 ${esPaginaActiva("/registro")}`} onClick={manejarNavegacion}>
                     Registrarse
                   </Link>
                 </li>
@@ -138,7 +140,7 @@ const Cabecera: React.FC = () => {
           </div>
 
           {/* Menú Mobile - SOLO en móviles */}
-          <div className={`d-lg-none w-100 bg-primary ${menuAbierto ? 'd-block' : 'd-none'}`}>
+          <div className={`d-lg-none w-100 bg-success ${menuAbierto ? 'd-block' : 'd-none'}`}>
             <div className="py-3">
               
               {/* Usuario Logueado - Mobile */}
@@ -148,7 +150,7 @@ const Cabecera: React.FC = () => {
                   <div className="d-flex align-items-center text-white mb-2 px-3">
                     <div className="bg-light rounded-circle d-flex align-items-center justify-content-center me-3" 
                         style={{width: '40px', height: '40px'}}>
-                      <span className="text-dark">👤</span>
+                      <Person className="text-dark" />
                     </div>
                     <div>
                       <div className="fw-bold">@{usuario?.nickName}</div>
@@ -158,37 +160,37 @@ const Cabecera: React.FC = () => {
 
                   {/* Navegación Mobile */}
                   <Link to="/" className="btn btn-outline-light w-100 text-start rounded-0 border-0 border-bottom" onClick={manejarNavegacion}>
-                    🏠 Inicio
+                    <House className="me-2" /> Inicio
                   </Link>
                   
                   <Link to="/nueva-publicacion" className="btn btn-outline-light w-100 text-start rounded-0 border-0 border-bottom" onClick={manejarNavegacion}>
-                    📝 Crear Publicación
+                    <Pencil className="me-2" /> Crear Publicación
                   </Link>
                   
                   <Link to="/perfil" className="btn btn-outline-light w-100 text-start rounded-0 border-0 border-bottom" onClick={manejarNavegacion}>
-                    👤 Mi Perfil
+                    <PersonCircle className="me-2" /> Mi Perfil
                   </Link>
 
                   <button 
                     onClick={handleCerrarSesion} 
-                    className="btn btn-outline-danger w-100 text-start rounded-0 border-0 border-bottom mt-3"
+                    className="btn btn-outline-light w-100 text-start rounded-0 border-0 border-bottom mt-3"
                   >
-                    🚪 Cerrar Sesión
+                    <BoxArrowRight className="me-2" /> Cerrar Sesión
                   </button>
                 </div>
               ) : (
                 /* Usuario No Logueado - Mobile */
                 <div className="d-flex flex-column gap-2">
                   <Link to="/" className="btn btn-outline-light w-100 text-start rounded-0 border-0 border-bottom" onClick={manejarNavegacion}>
-                    🏠 Inicio
+                    <House className="me-2" /> Inicio
                   </Link>
                   
                   <Link to="/login" className="btn btn-outline-light w-100 text-start rounded-0 border-0 border-bottom" onClick={manejarNavegacion}>
-                    🔑 Ingresar
+                    <Person className="me-2" /> Ingresar
                   </Link>
                   
                   <Link to="/registro" className="btn btn-light w-100 text-start rounded-0 border-0 border-bottom" onClick={manejarNavegacion}>
-                    📝 Registrarse
+                    <Pencil className="me-2" /> Registrarse
                   </Link>
                 </div>
               )}
@@ -200,14 +202,13 @@ const Cabecera: React.FC = () => {
       {/* Banner de Bienvenida (solo en homepage) */}
       {location.pathname === "/" && (
         <div className="banner-container shadow">
-    <img
-      src={banner}
-      alt="Banner principal"
-      className="banner-img"
-    />
-
-  </div>
-)}
+          <img
+            src={banner}
+            alt="Banner principal"
+            className="banner-img"
+          />
+        </div>
+      )}
 
       <style>{`
         .bg-gradient-primary {
@@ -241,16 +242,19 @@ const Cabecera: React.FC = () => {
           left: 0;
           right: 0;
         }
+        .navbar-toggler:focus {
+          box-shadow: 0 0 0 0.1rem rgba(25, 135, 84, 0.25);
+        }
         @media (max-width: 768px) {
           .banner-img {
-          max-height: 250px;
+            max-height: 250px;
+          }
+          .banner-buttons .btn {
+            font-size: 1rem;
+            padding: 0.6rem 1.2rem;
+          }
         }
-        .banner-buttons .btn {
-          font-size: 1rem;
-          padding: 0.6rem 1.2rem;
-        }
-      }`}
-      </style>
+      `}</style>
     </>
   );
 };
