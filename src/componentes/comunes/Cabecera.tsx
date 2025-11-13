@@ -74,7 +74,7 @@ const Cabecera: React.FC = () => {
           <div className="d-none d-lg-flex navbar-collapse">
             <ul className="navbar-nav me-auto">
               <li className="nav-item">
-                <Link to="/" className={`nav-link ${esPaginaActiva("/")}`} onClick={manejarNavegacion}>
+                <Link to="/" className={`nav-link d-flex align-items-center ${esPaginaActiva("/")}`} onClick={manejarNavegacion}>
                   <House className="me-1" /> Inicio
                 </Link>
               </li>
@@ -84,7 +84,7 @@ const Cabecera: React.FC = () => {
             {estaLogueado ? (
               <div className="navbar-nav align-items-center">
                 <li className="nav-item">
-                  <Link to="/nueva-publicacion" className="btn btn-success btn-sm me-2" onClick={manejarNavegacion}>
+                  <Link to="/nueva-publicacion" className="btn btn-success btn-sm me-2 d-flex align-items-center"  onClick={manejarNavegacion}>
                     <Pencil className="me-1" /> Crear Post
                   </Link>
                 </li>
@@ -126,12 +126,12 @@ const Cabecera: React.FC = () => {
               /* Usuario No Logueado - Desktop */
               <div className="navbar-nav">
                 <li className="nav-item">
-                  <Link to="/login" className={`nav-link ${esPaginaActiva("/login")}`} onClick={manejarNavegacion}>
+                  <Link to="/login" className={`nav-link d-flex align-items-center ${esPaginaActiva("/login")}`} onClick={manejarNavegacion}>
                     <Person className="me-1" /> Ingresar
                   </Link>
                 </li>
                 <li className="nav-item">
-                  <Link to="/registro" className={`btn btn-success btn-sm ms-2 ${esPaginaActiva("/registro")}`} onClick={manejarNavegacion}>
+                  <Link to="/registro" className={`btn btn-success btn-sm ms-2 d-flex align-items-center ${esPaginaActiva("/registro")}`} onClick={manejarNavegacion}>
                     Registrarse
                   </Link>
                 </li>
