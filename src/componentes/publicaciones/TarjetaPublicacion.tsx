@@ -17,14 +17,14 @@ interface Publicacion {
 interface TarjetaPublicacionProps {
   publicacion: Publicacion;
   onMeGusta: (id: number) => void;
-  onNoMeGusta: (id: number) => void;
+  //onNoMeGusta: (id: number) => void;
   esDetalle?: boolean;
 }
 
 const TarjetaPublicacion: React.FC<TarjetaPublicacionProps> = ({
   publicacion,
   onMeGusta,
-  onNoMeGusta,
+  //onNoMeGusta,
   esDetalle = false
 }) => {
   const [mostrarCompleto, setMostrarCompleto] = useState(esDetalle);
@@ -125,7 +125,7 @@ const TarjetaPublicacion: React.FC<TarjetaPublicacionProps> = ({
           comentariosCount={publicacion.comentariosCount}
           meGustaCount={publicacion.meGustaCount}
           onMeGusta={onMeGusta}
-          onNoMeGusta={onNoMeGusta}
+          //onNoMeGusta={onNoMeGusta}
           esDetalle={esDetalle}
         />
       </div>

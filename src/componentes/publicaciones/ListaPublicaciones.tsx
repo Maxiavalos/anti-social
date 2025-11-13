@@ -174,9 +174,9 @@ const ListaPublicaciones: React.FC = () => {
     manejarToggleLike(id);
   };
 
-  const manejarNoMeGusta = (id: number) => {
-    manejarToggleLike(id);
-  };
+  //const manejarNoMeGusta = (id: number) => {
+  //  manejarToggleLike(id);
+  //};
 
   if (cargando) {
     return (
@@ -205,7 +205,7 @@ const ListaPublicaciones: React.FC = () => {
           <TarjetaPublicacion
             publicacion={publicacion}
             onMeGusta={manejarMeGusta}
-            onNoMeGusta={manejarNoMeGusta}
+            //onNoMeGusta={manejarNoMeGusta}
           />
         </div>
       ))}

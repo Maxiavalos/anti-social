@@ -7,7 +7,7 @@ interface BotonesInteraccionProps {
   comentariosCount: number;
   meGustaCount: number;
   onMeGusta: (id: number) => void;
-  onNoMeGusta: (id: number) => void;
+  //onNoMeGusta: (id: number) => void;
   esDetalle?: boolean;
 }
 
@@ -16,7 +16,7 @@ const BotonesInteraccion: React.FC<BotonesInteraccionProps> = ({
   comentariosCount,
   meGustaCount,
   onMeGusta,
-  onNoMeGusta,
+  //onNoMeGusta,
   esDetalle = false
 }) => {
   return (
@@ -30,12 +30,7 @@ const BotonesInteraccion: React.FC<BotonesInteraccionProps> = ({
           <HandThumbsUp size={14} />
           <span>{meGustaCount}</span>
         </button>
-        <button 
-          className="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1"
-          onClick={() => onNoMeGusta(publicacionId)}
-        >
-          <HandThumbsDown size={14} />
-        </button>
+        
         
         {!esDetalle && (
           <Link 
